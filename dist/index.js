@@ -89,6 +89,63 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 14:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asFloat (value) {
+  const n = parseFloat(value)
+
+  if (isNaN(n)) {
+    throw new Error('should be a valid float')
+  }
+
+  return n
+}
+
+
+/***/ }),
+
+/***/ 20:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asJson (value) {
+  try {
+    return JSON.parse(value)
+  } catch (e) {
+    throw new Error('should be valid (parseable) JSON')
+  }
+}
+
+
+/***/ }),
+
+/***/ 37:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asJson = __webpack_require__(20)
+
+module.exports = function asJsonArray (value) {
+  var ret = asJson(value)
+
+  if (!Array.isArray(ret)) {
+    throw new Error('should be a parseable JSON Array')
+  }
+
+  return ret
+}
+
+
+/***/ }),
+
 /***/ 49:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -133,6 +190,27 @@ function onceStrict (fn) {
   f.onceError = name + " shouldn't be called more than once"
   f.called = false
   return f
+}
+
+
+/***/ }),
+
+/***/ 55:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asInt = __webpack_require__(299)
+
+module.exports = function asIntNegative (value) {
+  const ret = asInt(value)
+
+  if (ret > 0) {
+    throw new Error('should be a negative integer')
+  }
+
+  return ret
 }
 
 
@@ -1082,6 +1160,7 @@ const path = __webpack_require__(622);
 const core = __webpack_require__(470);
 const tmp = __webpack_require__(150);
 const fs = __webpack_require__(747);
+const env = __webpack_require__(413)
 
 async function run() {
   try {
@@ -1089,6 +1168,8 @@ async function run() {
     const taskDefinitionFile = core.getInput('task-definition', { required: true });
     const containerName = core.getInput('container-name', { required: true });
     const imageURI = core.getInput('image', { required: true });
+    const logGroup = core.getInput('log-group', { required: true });
+    const serviceFamily = core.getInput('service-family', { required: true });
 
     // Parse the task definition
     const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
@@ -1110,6 +1191,19 @@ async function run() {
       throw new Error('Invalid task definition: Could not find container definition with matching name');
     }
     containerDef.image = imageURI;
+    containerDef.logConfiguration.options["awslogs-group"] = logGroup;
+
+    containerDef.environment = containerDef.environment.map(object => {
+    return {
+      name: object.name,
+      value: env
+              .get(object.name)
+              .required()
+              .asString() || object.value
+    }
+  })
+
+    taskDefContents.family = serviceFamily;
 
     // Write out a new task definition file
     var updatedTaskDefFile = tmp.fileSync({
@@ -1133,6 +1227,25 @@ module.exports = run;
 /* istanbul ignore next */
 if (require.main === require.cache[eval('__filename')]) {
     run();
+}
+
+
+/***/ }),
+
+/***/ 116:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asBoolStrict (value) {
+  const val = value.toLowerCase()
+
+  if ((val !== 'false') && (val !== 'true')) {
+    throw new Error('should be either "true", "false", "TRUE", or "FALSE"')
+  }
+
+  return val !== 'false'
 }
 
 
@@ -1444,6 +1557,28 @@ exports.realpath = function realpath(p, cache, cb) {
     start();
   }
 };
+
+
+/***/ }),
+
+/***/ 146:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const URL = __webpack_require__(835).URL
+const asString = __webpack_require__(889)
+
+module.exports = function asUrlObject (value) {
+  const ret = asString(value)
+
+  try {
+    return new URL(ret)
+  } catch (e) {
+    throw new Error('should be a valid URL')
+  }
+}
 
 
 /***/ }),
@@ -2235,6 +2370,27 @@ module.exports.setGracefulCleanup = setGracefulCleanup;
 
 /***/ }),
 
+/***/ 200:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asFloat = __webpack_require__(14)
+
+module.exports = function asFloatNegative (value) {
+  const ret = asFloat(value)
+
+  if (ret > 0) {
+    throw new Error('should be a negative float')
+  }
+
+  return ret
+}
+
+
+/***/ }),
+
 /***/ 245:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -2728,6 +2884,46 @@ GlobSync.prototype._makeAbs = function (f) {
 
 /***/ }),
 
+/***/ 249:
+/***/ (function(module) {
+
+"use strict";
+
+
+/**
+ * Default logger included with env-var.
+ * Will not log anything if NODE_ENV is set to production
+ */
+module.exports = function genLogger (out, prodFlag) {
+  return function envVarLogger (varname, str) {
+    if (!prodFlag || !prodFlag.match(/prod|production/)) {
+      out(`env-var (${varname}): ${str}`)
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 299:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asInt (value) {
+  const n = parseInt(value, 10)
+
+  if (isNaN(n) || value.toString().indexOf('.') !== -1) {
+    throw new Error('should be a valid integer')
+  }
+
+  return n
+}
+
+
+/***/ }),
+
 /***/ 302:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -3047,6 +3243,56 @@ if (typeof Object.create === 'function') {
 /***/ (function(module) {
 
 module.exports = require("assert");
+
+/***/ }),
+
+/***/ 366:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asIntPositive = __webpack_require__(579)
+
+module.exports = function asPortNumber (value) {
+  var ret = asIntPositive(value)
+
+  if (ret > 65535) {
+    throw new Error('cannot assign a port number greater than 65535')
+  }
+
+  return ret
+}
+
+
+/***/ }),
+
+/***/ 386:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asRegExp (value, flags) {
+  // We have to test the value and flags indivudally if we want to write our
+  // own error messages,as there is no way to differentiate between the two
+  // errors except by using string comparisons.
+
+  // Test the flags
+  try {
+    RegExp(undefined, flags)
+  } catch (err) {
+    throw new Error('invalid regexp flags')
+  }
+
+  try {
+    return new RegExp(value, flags)
+  } catch (err) {
+    // We know that the regexp is the issue because we tested the flags earlier
+    throw new Error('should be a valid regexp')
+  }
+}
+
 
 /***/ }),
 
@@ -3847,6 +4093,69 @@ Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
 
 /***/ }),
 
+/***/ 413:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const variable = __webpack_require__(745)
+const EnvVarError = __webpack_require__(807)
+
+/**
+ * Returns an "env-var" instance that reads from the given container of values.
+ * By default, we export an instance that reads from process.env
+ * @param  {Object} container target container to read values from
+ * @param  {Object} extraAccessors additional accessors to attach to the
+ * resulting object
+ * @return {Object} a new module instance
+ */
+const from = (container, extraAccessors, logger) => {
+  return {
+    from: from,
+
+    /**
+     * This is the Error class used to generate exceptions. Can be used to identify
+     * exceptions and handle them appropriately.
+     */
+    EnvVarError: __webpack_require__(807),
+
+    /**
+     * Returns a variable instance with helper functions, or process.env
+     * @param  {String} variableName Name of the environment variable requested
+     * @return {Object}
+     */
+    get: function (variableName) {
+      if (!variableName) {
+        return container
+      }
+
+      if (arguments.length > 1) {
+        throw new EnvVarError('It looks like you passed more than one argument to env.get(). Since env-var@6.0.0 this is no longer supported. To set a default value use env.get(TARGET).default(DEFAULT)')
+      }
+
+      return variable(container, variableName, extraAccessors || {}, logger || function noopLogger () {})
+    },
+
+    /**
+     * Provides access to the functions that env-var uses to parse
+     * process.env strings into valid types requested by the API
+     */
+    accessors: __webpack_require__(645),
+
+    /**
+     * Provides a default logger that can be used to print logs.
+     * This will not print logs in a production environment (checks process.env.NODE_ENV)
+     */
+    logger: __webpack_require__(249)(console.log, container.NODE_ENV)
+  }
+}
+
+module.exports = from(process.env)
+
+
+/***/ }),
+
 /***/ 417:
 /***/ (function(module) {
 
@@ -4549,6 +4858,68 @@ rimraf.sync = rimrafSync
 
 /***/ }),
 
+/***/ 579:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asInt = __webpack_require__(299)
+
+module.exports = function asIntPositive (value) {
+  const ret = asInt(value)
+
+  if (ret < 0) {
+    throw new Error('should be a positive integer')
+  }
+
+  return ret
+}
+
+
+/***/ }),
+
+/***/ 590:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const urlObject = __webpack_require__(146)
+
+module.exports = function asUrlString (value) {
+  return urlObject(value).toString()
+}
+
+
+/***/ }),
+
+/***/ 613:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asBool (value) {
+  const val = value.toLowerCase()
+
+  const allowedValues = [
+    'false',
+    '0',
+    'true',
+    '1'
+  ]
+
+  if (allowedValues.indexOf(val) === -1) {
+    throw new Error('should be either "true", "false", "TRUE", "FALSE", 1, or 0')
+  }
+
+  return !(((val === '0') || (val === 'false')))
+}
+
+
+/***/ }),
+
 /***/ 614:
 /***/ (function(module) {
 
@@ -4630,6 +5001,41 @@ module.exports = require("path");
 
 /***/ }),
 
+/***/ 645:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = {
+  asArray: __webpack_require__(841),
+
+  asBoolStrict: __webpack_require__(116),
+  asBool: __webpack_require__(613),
+
+  asPortNumber: __webpack_require__(366),
+  asEnum: __webpack_require__(833),
+
+  asFloatNegative: __webpack_require__(200),
+  asFloatPositive: __webpack_require__(921),
+  asFloat: __webpack_require__(14),
+
+  asIntNegative: __webpack_require__(55),
+  asIntPositive: __webpack_require__(579),
+  asInt: __webpack_require__(299),
+
+  asJsonArray: __webpack_require__(37),
+  asJsonObject: __webpack_require__(680),
+  asJson: __webpack_require__(20),
+
+  asRegExp: __webpack_require__(386),
+
+  asString: __webpack_require__(889),
+
+  asUrlObject: __webpack_require__(146),
+  asUrlString: __webpack_require__(590)
+}
+
+
+/***/ }),
+
 /***/ 669:
 /***/ (function(module) {
 
@@ -4698,6 +5104,27 @@ function slice (args) {
 
 /***/ }),
 
+/***/ 680:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asJson = __webpack_require__(20)
+
+module.exports = function asJsonObject (value) {
+  var ret = asJson(value)
+
+  if (Array.isArray(ret)) {
+    throw new Error('should be a parseable JSON Object')
+  }
+
+  return ret
+}
+
+
+/***/ }),
+
 /***/ 681:
 /***/ (function(module) {
 
@@ -4742,10 +5169,275 @@ try {
 
 /***/ }),
 
+/***/ 745:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const EnvVarError = __webpack_require__(807)
+const base64Regex = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/
+
+/**
+ * Returns an Object that contains functions to read and specify the format of
+ * the variable you wish to have returned
+ * @param  {Object} container Encapsulated container (e.g., `process.env`).
+ * @param  {String} varName Name of the requested property from `container`.
+ * @param  {*} defValue Default value to return if `varName` is invalid.
+ * @param  {Object} extraAccessors Extra accessors to install.
+ * @return {Object}
+ */
+module.exports = function getVariableAccessors (container, varName, extraAccessors, logger) {
+  let isBase64 = false
+  let isRequired = false
+  let defValue
+  let example
+
+  const builtInAccessors = __webpack_require__(645)
+
+  /**
+   * Logs the given string using the provided logger
+   * @param {String} str
+   * @param {String} str
+   */
+  function log (str) {
+    logger(varName, str)
+  }
+
+  /**
+   * Throw an error with a consistent type/format.
+   * @param {String} value
+   */
+  function raiseError (value, msg) {
+    let errMsg = `"${varName}" ${msg}`
+
+    if (value) {
+      errMsg = `${errMsg}`
+    }
+
+    if (example) {
+      errMsg = `${errMsg}. An example of a valid value would be: ${example}`
+    }
+
+    throw new EnvVarError(errMsg)
+  }
+
+  /**
+   * Returns an accessor wrapped by error handling and args passing logic
+   * @param {Function} accessor
+   */
+  function generateAccessor (accessor) {
+    return function () {
+      let value = container[varName]
+
+      log(`will be read from the environment using "${accessor.name}" accessor`)
+
+      if (typeof value === 'undefined') {
+        if (typeof defValue === 'undefined' && isRequired) {
+          log('was not found in the environment, but is required to be set')
+          // Var is not set, nor is a default. Throw an error
+          raiseError(undefined, 'is a required variable, but it was not set')
+        } else if (typeof defValue !== 'undefined') {
+          log(`was not found in the environment, parsing default value "${defValue}" instead`)
+          value = defValue
+        } else {
+          log('was not found in the environment, but is not required. returning undefined')
+          // return undefined since variable is not required and
+          // there's no default value provided
+          return undefined
+        }
+      }
+
+      if (isRequired) {
+        log('verifying variable value is not an empty string')
+        // Need to verify that required variables aren't just whitespace
+        if (value.trim().length === 0) {
+          raiseError(undefined, 'is a required variable, but its value was empty')
+        }
+      }
+
+      if (isBase64) {
+        log('verifying variable is a valid base64 string')
+        if (!value.match(base64Regex)) {
+          raiseError(value, 'should be a valid base64 string if using convertFromBase64')
+        }
+        log('converting from base64 to utf8 string')
+        value = Buffer.from(value, 'base64').toString()
+      }
+
+      const args = [value].concat(Array.prototype.slice.call(arguments))
+
+      try {
+        log(`passing value "${value}" to "${accessor.name}" accessor`)
+
+        const result = accessor.apply(
+          accessor,
+          args
+        )
+
+        log(`parsed successfully, returning ${result}`)
+        return result
+      } catch (error) {
+        raiseError(value, error.message)
+      }
+    }
+  }
+
+  const accessors = {
+    /**
+     * Instructs env-var to first convert the value of the variable from base64
+     * when reading it using a function such as asString()
+     */
+    convertFromBase64: function () {
+      log('marking for base64 conversion')
+      isBase64 = true
+
+      return accessors
+    },
+
+    /**
+     * Set a default value for the variable
+     * @param {String} value
+     */
+    default: function (value) {
+      if (typeof value === 'number') {
+        defValue = value.toString()
+      } else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+        defValue = JSON.stringify(value)
+      } else if (typeof value !== 'string') {
+        throw new EnvVarError('values passed to default() must be of Number, String, Array, or Object type')
+      } else {
+        defValue = value
+      }
+
+      log(`setting default value to "${defValue}"`)
+
+      return accessors
+    },
+
+    /**
+     * Ensures a variable is set in the given environment container. Throws an
+     * EnvVarError if the variable is not set or a default is not provided
+     * @param {Boolean} required
+     */
+    required: function (required) {
+      if (typeof required === 'undefined') {
+        log('marked as required')
+        // If no value is passed assume that developer means "true"
+        // This is to retain support legacy usage (and intuitive)
+        isRequired = true
+      } else {
+        log(`setting required flag to ${required}`)
+        isRequired = required
+      }
+
+      return accessors
+    },
+
+    /**
+     * Set an example value for this variable. If the variable value is not set
+     * or is set to an invalid value this example will be show in error output.
+     * @param {String} example
+     */
+    example: function (ex) {
+      example = ex
+
+      return accessors
+    }
+  }
+
+  // Attach accessors, and extra accessors if provided.
+  Object.entries({
+    ...builtInAccessors,
+    ...extraAccessors
+  }).forEach(([name, accessor]) => {
+    accessors[name] = generateAccessor(accessor)
+  })
+
+  return accessors
+}
+
+
+/***/ }),
+
 /***/ 747:
 /***/ (function(module) {
 
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 807:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const inherits = __webpack_require__(669).inherits
+
+/**
+ * Creates a custom error class that can be used to identify errors generated
+ * by the module
+ */
+function EnvVarError (message) {
+  Error.captureStackTrace(this, this.constructor)
+  this.name = 'EnvVarError'
+  this.message = `env-var: ${message}`
+};
+
+inherits(EnvVarError, Error)
+
+module.exports = EnvVarError
+
+
+/***/ }),
+
+/***/ 833:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asString = __webpack_require__(889)
+
+module.exports = function asEnum (value, validValues) {
+  const valueString = asString(value)
+
+  if (validValues.indexOf(valueString) < 0) {
+    throw new Error(`should be one of [${validValues.join(', ')}]`)
+  }
+
+  return valueString
+}
+
+
+/***/ }),
+
+/***/ 835:
+/***/ (function(module) {
+
+module.exports = require("url");
+
+/***/ }),
+
+/***/ 841:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asString = __webpack_require__(889)
+
+module.exports = function asArray (value, delimiter) {
+  delimiter = delimiter || ','
+
+  if (!value.length) {
+    return []
+  } else {
+    return asString(value).split(delimiter).filter(Boolean)
+  }
+}
+
 
 /***/ }),
 
@@ -4996,6 +5688,19 @@ function childrenIgnored (self, path) {
 
 /***/ }),
 
+/***/ 889:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function asString (value) {
+  return value
+}
+
+
+/***/ }),
+
 /***/ 896:
 /***/ (function(module) {
 
@@ -5012,6 +5717,27 @@ module.exports = function (xs, fn) {
 var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
+
+
+/***/ }),
+
+/***/ 921:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const asFloat = __webpack_require__(14)
+
+module.exports = function asFloatPositive (value) {
+  const ret = asFloat(value)
+
+  if (ret < 0) {
+    throw new Error('should be a positive float')
+  }
+
+  return ret
+}
 
 
 /***/ })

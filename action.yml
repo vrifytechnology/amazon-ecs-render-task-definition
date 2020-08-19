@@ -13,6 +13,12 @@ inputs:
   image:
     description: 'The URI of the container image to insert into the ECS task definition'
     required: true
+  log-group:
+    description: 'The log group to set for the task'
+    required: true
+  service-family:
+    description: 'The service family container'
+    required: true
 outputs:
   task-definition:
     description: 'The path to the rendered task definition file'
