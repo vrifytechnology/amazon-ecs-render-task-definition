@@ -18,7 +18,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')                  // container-name
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP"]');
 
         process.env = Object.assign(process.env, { GITHUB_WORKSPACE: __dirname });
         process.env = Object.assign(process.env, { RUNNER_TEMP: '/home/runner/work/_temp' });
@@ -102,7 +103,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')                  // container-name
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP"]');
         jest.mock('/hello/task-definition.json', () => ({
             family: 'task-def-family',
             containerDefinitions: [
@@ -156,7 +158,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -172,7 +175,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -191,7 +195,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -215,7 +220,8 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
             .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family');
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
