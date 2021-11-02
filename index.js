@@ -13,11 +13,9 @@ async function run() {
     const logGroup = core.getInput('log-group', { required: false });
     const serviceFamily = core.getInput('service-family', { required: false });
     let envList = core.getInput('env-list', { required: false });
-    console.log(envList)
     if (envList) {
       envList = JSON.parse(envList)
     }
-    console.log(envList)
 
     const environmentVariables = core.getInput('environment-variables', { required: false });
 
@@ -48,19 +46,13 @@ async function run() {
     if (envList) {
       const environment = []
       envList.forEach(variable => {
-        console.log(variable)
-        try {
-          environment.push({
-            name: variable,
-            value: env
-                .get(variable)
-                .required()
-                .asString()
-          })
-        } catch (e) {
-          console.log(e)
-        }
-        console.log(environment)
+        environment.push({
+          name: variable,
+          value: env
+              .get(variable)
+              .required()
+              .asString()
+        })
       })
       containerDef.environment = environment
     } else {
@@ -68,11 +60,11 @@ async function run() {
         name: object.name,
         value: env
             .get(object.name)
-            .required(false)
+            .required()
             .asString() || object.value
       }))
     }
-    console.log(containerDef.environment);
+
     if (serviceFamily) {
       taskDefContents.family = serviceFamily;
     }
