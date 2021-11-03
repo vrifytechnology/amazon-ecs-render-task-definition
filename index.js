@@ -16,6 +16,7 @@ async function run() {
     if (envList) {
       envList = JSON.parse(envList)
     }
+    console.log(envList)
 
     // Parse the task definition
     const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
@@ -44,13 +45,19 @@ async function run() {
     if (envList) {
       const environment = []
       envList.forEach(variable => {
-        environment.push({
-          name: variable,
-          value: env
-              .get(variable)
-              .required()
-              .asString()
-        })
+        console.log(variable)
+        try {
+          environment.push({
+            name: variable,
+            value: env
+                .get(variable)
+                .required()
+                .asString()
+          })
+        } catch (e) {
+          console.log(e)
+        }
+        console.log(environment)
       })
       containerDef.environment = environment
     } else {
@@ -62,7 +69,7 @@ async function run() {
             .asString() || object.value
       }))
     }
-
+    console.log(containerDef.environment);
     if (serviceFamily) {
       taskDefContents.family = serviceFamily;
     }
