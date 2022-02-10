@@ -1224,7 +1224,7 @@ async function run() {
         name: object.name,
         value: env
             .get(object.name)
-            .required()
+            .required(false)
             .asString() || object.value
       }))
     }
