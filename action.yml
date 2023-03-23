@@ -13,6 +13,8 @@ inputs:
   image:
     description: 'The URI of the container image to insert into the ECS task definition'
     required: true
+  environment-variables:
+    description: 'Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.'
   log-group:
     description: 'The log group to set for the task'
     required: false
@@ -26,5 +28,5 @@ outputs:
   task-definition:
     description: 'The path to the rendered task definition file'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
