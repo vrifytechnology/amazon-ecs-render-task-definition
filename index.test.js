@@ -41,11 +41,6 @@ describe('Render task definition', () => {
                 {
                     name: "web",
                     image: "some-other-image",
-                    logConfiguration: {
-                        options: {
-                            "awslogs-group": "",
-                        },
-                    },
                     environment: [
                         {
                             name: "FOO",
@@ -54,14 +49,17 @@ describe('Render task definition', () => {
                         {
                             name: "DONT-TOUCH",
                             value: "me"
+                        },
+                        {
+                            name: "RUNNER_TEMP",
+                            value: "/home/runner/work/_temp"
                         }
                     ],
                     logConfiguration: {
                         options: {
                             "awslogs-group": "",
                         },
-                    },
-                    environment: [{name:"RUNNER_TEMP", value: "/home/runner/work/_temp"}]
+                    }
                 },
                 {
                     name: "sidecar",
@@ -93,11 +91,6 @@ describe('Render task definition', () => {
                     {
                         name: "web",
                         image: "nginx:latest",
-                        logConfiguration: {
-                            options: {
-                                "awslogs-group": "log-group",
-                            },
-                        },
                         environment: [
                             {
                                 name: "FOO",
@@ -110,6 +103,10 @@ describe('Render task definition', () => {
                             {
                                 name: "HELLO",
                                 value: "world"
+                            },
+                            {
+                                name: "RUNNER_TEMP",
+                                value: "/home/runner/work/_temp"
                             }
                         ],
                         logConfiguration: {
@@ -117,7 +114,6 @@ describe('Render task definition', () => {
                                 "awslogs-group": "log-group",
                             },
                         },
-                        environment: [{name:"RUNNER_TEMP", value: "/home/runner/work/_temp"}]
                     },
                     {
                         name: "sidecar",
@@ -181,15 +177,14 @@ describe('Render task definition', () => {
                     {
                         name: "web",
                         image: "nginx:latest",
-                        logConfiguration: {
-                            options: {
-                                "awslogs-group": "log-group",
-                            },
-                        },
                         environment: [
                             {
                                 name: "EXAMPLE",
                                 value: "here"
+                            },
+                            {
+                                name: "RUNNER_TEMP",
+                                value: "/home/runner/work/_temp"
                             }
                         ],
                         logConfiguration: {
@@ -197,7 +192,6 @@ describe('Render task definition', () => {
                                 "awslogs-group": "log-group",
                             },
                         },
-                        environment: [{name:"RUNNER_TEMP", value: "/home/runner/work/_temp"}]
                     }
                 ]
             }, null, 2)
