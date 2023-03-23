@@ -24,6 +24,9 @@ describe('Render task definition', () => {
 
         core.getInput = jest
             .fn()
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('[ "DJANGO_ACCOUNT_ALLOW_REGISTRATION", "DJANGO_ADMIN_URL", "DJANGO_AWS_REGION_NAME", "DJANGO_AWS_S3_CUSTOM_DOMAIN", "DJANGO_AWS_STORAGE_BUCKET_NAME", "DJANGO_SECURE_SSL_REDIRECT", "DJANGO_SENTRY_LOG_LEVEL", "DJANGO_SENTRY_SAMPLE_RATE", "DJANGO_SETTINGS_MODULE", "MYSQL_DATABASE", "MYSQL_HOST", "MYSQL_PORT", "REDIS_URL", "SENTRY_DSN", "VRIFY_CDN_URL", "WEB_CONCURRENCY", "SOCIAL_AUTH_APPLE_ID_CLIENT", "SOCIAL_AUTH_APPLE_ID_AUDIENCE", "WEBAPP_ENDPOINT", "VPEAPP_ENDPOINT", "API_ENDPOINT", "CRONOFY_CLIENT_ID", "ENVIRONMENT", "MIXPANEL_API_KEY", "AMPLITUDE_API_KEY"]')
             .mockReturnValueOnce('task-definition.json') // task-definition
             .mockReturnValueOnce('web')                  // container-name
             .mockReturnValueOnce('nginx:latest')         // image
@@ -52,12 +55,27 @@ describe('Render task definition', () => {
                         {
                             name: "DONT-TOUCH",
                             value: "me"
+                        },
+                        {
+                            name:"RUNNER_TEMP",
+                            value: "/home/runner/work/_temp"
                         }
-                    ]
+                    ],
+                    logConfiguration: {
+                        options: {
+                            "awslogs-group": "",
+                        },
+                    }
                 },
                 {
                     name: "sidecar",
-                    image: "hello"
+                    image: "hello",
+                    logConfiguration: {
+                        options: {
+                            "awslogs-group": "",
+                        },
+                    },
+                    environment: [{name:"RUNNER_TEMP", value: "/home/runner/work/_temp"}]
                 }
             ]
         }), { virtual: true });
@@ -74,11 +92,16 @@ describe('Render task definition', () => {
           });
         expect(fs.writeFileSync).toHaveBeenNthCalledWith(1, 'new-task-def-file-name',
             JSON.stringify({
-                family: 'task-def-family',
+                family: 'service-family',
                 containerDefinitions: [
                     {
                         name: "web",
                         image: "nginx:latest",
+                        logConfiguration: {
+                            options: {
+                                "awslogs-group": "log-group",
+                            },
+                        },
                         environment: [
                             {
                                 name: "FOO",
@@ -91,12 +114,22 @@ describe('Render task definition', () => {
                             {
                                 name: "HELLO",
                                 value: "world"
+                            },
+                            {
+                                name:"RUNNER_TEMP",
+                                value: "/home/runner/work/_temp"
                             }
                         ]
                     },
                     {
                         name: "sidecar",
-                        image: "hello"
+                        image: "hello",
+                        logConfiguration: {
+                            options: {
+                                "awslogs-group": "",
+                            },
+                        },
+                        environment: [{name:"RUNNER_TEMP", value: "/home/runner/work/_temp"}]
                     }
                 ]
             }, null, 2)
@@ -107,6 +140,9 @@ describe('Render task definition', () => {
     test('renders a task definition at an absolute path, and with initial environment empty', async () => {
         core.getInput = jest
             .fn()
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP"]')
             .mockReturnValueOnce('/hello/task-definition.json') // task-definition
             .mockReturnValueOnce('web')                  // container-name
             .mockReturnValueOnce('nginx:latest')         // image
@@ -116,7 +152,13 @@ describe('Render task definition', () => {
             containerDefinitions: [
                 {
                     name: "web",
-                    image: "some-other-image"
+                    image: "some-other-image",
+                    logConfiguration: {
+                        options: {
+                            "awslogs-group": "",
+                        },
+                    },
+                    environment: [{name:"RUNNER_TEMP", value: ""}]
                 }
             ]
         }), { virtual: true });
@@ -132,15 +174,24 @@ describe('Render task definition', () => {
           });
         expect(fs.writeFileSync).toHaveBeenNthCalledWith(1, 'new-task-def-file-name',
             JSON.stringify({
-                family: 'task-def-family',
+                family: 'service-family',
                 containerDefinitions: [
                     {
                         name: "web",
                         image: "nginx:latest",
+                        logConfiguration: {
+                            options: {
+                                "awslogs-group": "log-group",
+                            },
+                        },
                         environment: [
                             {
                                 name: "EXAMPLE",
                                 value: "here"
+                            },
+                            {
+                                name:"RUNNER_TEMP",
+                                value: "/home/runner/work/_temp"
                             }
                         ]
                     }
@@ -156,7 +207,10 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('does-not-exist-task-definition.json')
             .mockReturnValueOnce('web')
-            .mockReturnValueOnce('nginx:latest');
+            .mockReturnValueOnce('nginx:latest')
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -170,7 +224,10 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('non-json-task-definition.json')
             .mockReturnValueOnce('web')
-            .mockReturnValueOnce('nginx:latest');
+            .mockReturnValueOnce('nginx:latest')
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -187,7 +244,10 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('malformed-task-definition.json')
             .mockReturnValueOnce('web')
-            .mockReturnValueOnce('nginx:latest');
+            .mockReturnValueOnce('nginx:latest')
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 
@@ -209,7 +269,10 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('missing-container-task-definition.json')
             .mockReturnValueOnce('web')
-            .mockReturnValueOnce('nginx:latest');
+            .mockReturnValueOnce('nginx:latest')
+            .mockReturnValueOnce('log-group')
+            .mockReturnValueOnce('service-family')
+            .mockReturnValueOnce('["RUNNER_TEMP", "GITHUB_WORKSPACE"]');
 
         await run();
 

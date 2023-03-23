@@ -2,6 +2,7 @@ const path = require('path');
 const core = require('@actions/core');
 const tmp = require('tmp');
 const fs = require('fs');
+const env = require('env-var')
 
 async function run() {
   try {
@@ -9,6 +10,14 @@ async function run() {
     const taskDefinitionFile = core.getInput('task-definition', { required: true });
     const containerName = core.getInput('container-name', { required: true });
     const imageURI = core.getInput('image', { required: true });
+    const logGroup = core.getInput('log-group', { required: false });
+    const serviceFamily = core.getInput('service-family', { required: false });
+    let envList = core.getInput('env-list', { required: false });
+    console.log(envList)
+    if (envList) {
+      envList = JSON.parse(envList)
+    }
+    console.log(envList)
 
     const environmentVariables = core.getInput('environment-variables', { required: false });
 
@@ -32,6 +41,41 @@ async function run() {
       throw new Error('Invalid task definition: Could not find container definition with matching name');
     }
     containerDef.image = imageURI;
+    if (logGroup) {
+      containerDef.logConfiguration.options["awslogs-group"] = logGroup;
+    }
+
+    if (envList) {
+      const environment = []
+      envList.forEach(variable => {
+        console.log(variable)
+        try {
+          environment.push({
+            name: variable,
+            value: env
+                .get(variable)
+                .required()
+                .asString()
+          })
+        } catch (e) {
+          console.log(e)
+        }
+        console.log(environment)
+      })
+      containerDef.environment = environment
+    } else {
+      containerDef.environment = containerDef.environment.map(object => ({
+        name: object.name,
+        value: env
+            .get(object.name)
+            .required(false)
+            .asString() || object.value
+      }))
+    }
+    console.log(containerDef.environment);
+    if (serviceFamily) {
+      taskDefContents.family = serviceFamily;
+    }
 
     if (environmentVariables) {
 
