@@ -5,7 +5,17 @@ const fs = require('fs');
 
 jest.mock('@actions/core');
 jest.mock('tmp');
-jest.mock('fs');
+jest.mock('fs', () => ({
+    promises: {
+        access: jest.fn()
+    },
+    constants: {
+        O_CREATE: jest.fn()
+    },
+    rmdirSync: jest.fn(),
+    existsSync: jest.fn(),
+    writeFileSync: jest.fn()
+}));
 
 describe('Render task definition', () => {
 
@@ -16,15 +26,8 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('task-definition.json') // task-definition
             .mockReturnValueOnce('web')                  // container-name
-            .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family')
-            .mockReturnValueOnce('[ "DJANGO_ACCOUNT_ALLOW_REGISTRATION", "DJANGO_ADMIN_URL", "DJANGO_AWS_REGION_NAME", "DJANGO_AWS_S3_CUSTOM_DOMAIN", "DJANGO_AWS_STORAGE_BUCKET_NAME", "DJANGO_SECURE_SSL_REDIRECT", "DJANGO_SENTRY_LOG_LEVEL", "DJANGO_SENTRY_SAMPLE_RATE", "DJANGO_SETTINGS_MODULE", "MYSQL_DATABASE", "MYSQL_HOST", "MYSQL_PORT", "REDIS_URL", "SENTRY_DSN", "VRIFY_CDN_URL", "WEB_CONCURRENCY", "SOCIAL_AUTH_APPLE_ID_CLIENT", "SOCIAL_AUTH_APPLE_ID_AUDIENCE", "WEBAPP_ENDPOINT", "VPEAPP_ENDPOINT", "API_ENDPOINT", "CRONOFY_CLIENT_ID", "ENVIRONMENT", "MIXPANEL_API_KEY", "AMPLITUDE_API_KEY"]')
             .mockReturnValueOnce('nginx:latest')         // image
-            .mockReturnValueOnce('FOO=bar\nHELLO=world') // environment-variables
-            .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family')
-            .mockReturnValueOnce('[ "DJANGO_ACCOUNT_ALLOW_REGISTRATION", "DJANGO_ADMIN_URL", "DJANGO_AWS_REGION_NAME", "DJANGO_AWS_S3_CUSTOM_DOMAIN", "DJANGO_AWS_STORAGE_BUCKET_NAME", "DJANGO_SECURE_SSL_REDIRECT", "DJANGO_SENTRY_LOG_LEVEL", "DJANGO_SENTRY_SAMPLE_RATE", "DJANGO_SETTINGS_MODULE", "MYSQL_DATABASE", "MYSQL_HOST", "MYSQL_PORT", "REDIS_URL", "SENTRY_DSN", "VRIFY_CDN_URL", "WEB_CONCURRENCY", "SOCIAL_AUTH_APPLE_ID_CLIENT", "SOCIAL_AUTH_APPLE_ID_AUDIENCE", "WEBAPP_ENDPOINT", "VPEAPP_ENDPOINT", "API_ENDPOINT", "CRONOFY_CLIENT_ID", "ENVIRONMENT", "MIXPANEL_API_KEY", "AMPLITUDE_API_KEY"]');
+            .mockReturnValueOnce('FOO=bar\nHELLO=world'); // environment-variables
 
         process.env = Object.assign(process.env, { GITHUB_WORKSPACE: __dirname });
         process.env = Object.assign(process.env, { RUNNER_TEMP: '/home/runner/work/_temp' });
@@ -49,17 +52,8 @@ describe('Render task definition', () => {
                         {
                             name: "DONT-TOUCH",
                             value: "me"
-                        },
-                        {
-                            name: "RUNNER_TEMP",
-                            value: "/home/runner/work/_temp"
                         }
-                    ],
-                    logConfiguration: {
-                        options: {
-                            "awslogs-group": "",
-                        },
-                    }
+                    ]
                 },
                 {
                     name: "sidecar",
@@ -103,17 +97,8 @@ describe('Render task definition', () => {
                             {
                                 name: "HELLO",
                                 value: "world"
-                            },
-                            {
-                                name: "RUNNER_TEMP",
-                                value: "/home/runner/work/_temp"
                             }
-                        ],
-                        logConfiguration: {
-                            options: {
-                                "awslogs-group": "log-group",
-                            },
-                        },
+                        ]
                     },
                     {
                         name: "sidecar",
@@ -136,15 +121,8 @@ describe('Render task definition', () => {
             .fn()
             .mockReturnValueOnce('/hello/task-definition.json') // task-definition
             .mockReturnValueOnce('web')                  // container-name
-            .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family')
-            .mockReturnValueOnce('["RUNNER_TEMP"]')
             .mockReturnValueOnce('nginx:latest')         // image
-            .mockReturnValueOnce('EXAMPLE=here')        // environment-variables
-            .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('log-group')
-            .mockReturnValueOnce('service-family')
-            .mockReturnValueOnce('["RUNNER_TEMP"]');
+            .mockReturnValueOnce('EXAMPLE=here');        // environment-variables
         jest.mock('/hello/task-definition.json', () => ({
             family: 'task-def-family',
             containerDefinitions: [
@@ -181,17 +159,8 @@ describe('Render task definition', () => {
                             {
                                 name: "EXAMPLE",
                                 value: "here"
-                            },
-                            {
-                                name: "RUNNER_TEMP",
-                                value: "/home/runner/work/_temp"
                             }
-                        ],
-                        logConfiguration: {
-                            options: {
-                                "awslogs-group": "log-group",
-                            },
-                        },
+                        ]
                     }
                 ]
             }, null, 2)
