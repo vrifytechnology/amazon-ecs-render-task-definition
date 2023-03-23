@@ -20,8 +20,6 @@ async function run() {
 
     const environmentVariables = core.getInput('environment-variables', { required: false });
 
-    const environmentVariables = core.getInput('environment-variables', { required: false });
-
     // Parse the task definition
     const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
       taskDefinitionFile :
