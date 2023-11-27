@@ -24,17 +24,14 @@ inputs:
   environment-variables:
     description: 'Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.'
     required: false
-  environment-variables:
-    description: 'Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.'
+  log-configuration-log-driver:
+    description: "Create/Override logDriver inside logConfiguration"
     required: false
-  log-group:
-    description: 'The log group to set for the task'
+  log-configuration-options:
+    description: "Create/Override options inside logConfiguration. Each variable is of the form key=value, you can specify multiple variables with multi-line YAML strings."
     required: false
-  service-family:
-    description: 'The service family container'
-    required: false
-  env-list:
-    description: 'A list of variables to pull from the environment'
+  docker-labels:
+    description: "Create/Override options inside dockerLabels. Each variable is key=value, you can specify multiple variables with multi-line YAML."
     required: false
 outputs:
   task-definition:
