@@ -101,6 +101,25 @@ describe('Render task definition', () => {
                                 name: "HELLO",
                                 value: "world"
                             }
+                        ],
+                        logConfiguration: {
+                            options: {
+                                "awslogs-group": "log-group",
+                            },
+                        },
+                        environment: [
+                            {
+                                name: "FOO",
+                                value: "bar"
+                            },
+                            {
+                                name: "DONT-TOUCH",
+                                value: "me"
+                            },
+                            {
+                                name: "HELLO",
+                                value: "world"
+                            }
                         ]
                     },
                     {
