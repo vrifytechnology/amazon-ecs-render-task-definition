@@ -32,7 +32,7 @@ async function run() {
     if (!Array.isArray(taskDefContents.containerDefinitions)) {
       throw new Error('Invalid task definition format: containerDefinitions section is not present or is not an array');
     }
-    const containerDef = taskDefContents.containerDefinitions.find(function(element) {
+    const containerDef = taskDefContents.containerDefinitions.find(function (element) {
       return element.name == containerName;
     });
     if (!containerDef) {
@@ -44,30 +44,23 @@ async function run() {
     }
 
     if (envList) {
-      const environment = []
+      const environmentMap = new Map(containerDef.environment.map(e => [e.name, e.value]))
+
       envList.forEach(variable => {
         console.log(variable)
         try {
-          environment.push({
-            name: variable,
-            value: env
-                .get(variable)
-                .required()
-                .asString()
-          })
+          environmentMap.set(variable, env.get(variable).required().asString())
         } catch (e) {
           console.log(e)
         }
-        console.log(environment)
       })
-      containerDef.environment = environment
+
+      containerDef.environment = Array.from(environmentMap.entries()).map(([name, value]) => ({ name, value }))
+      console.log(containerDef.environment)
     } else {
       containerDef.environment = containerDef.environment.map(object => ({
         name: object.name,
-        value: env
-            .get(object.name)
-            .required(false)
-            .asString() || object.value
+        value: env.get(object.name).required(false).asString() || object.value
       }))
     }
     console.log(containerDef.environment);
@@ -96,5 +89,5 @@ module.exports = run;
 
 /* istanbul ignore next */
 if (require.main === module) {
-    run();
+  run();
 }
