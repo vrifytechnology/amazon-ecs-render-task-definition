@@ -51,30 +51,20 @@ async function run() {
     }
 
     if (envList) {
-      const environment = []
+      const environmentMap = new Map(containerDef.environment.map(e => [e.name, e.value]))
       envList.forEach(variable => {
         console.log(variable)
         try {
-          environment.push({
-            name: variable,
-            value: env
-                .get(variable)
-                .required()
-                .asString()
-          })
+          environmentMap.set(variable, env.get(variable).required().asString())
         } catch (e) {
           console.log(e)
         }
-        console.log(environment)
       })
-      containerDef.environment = environment
+      containerDef.environment = Array.from(environmentMap.entries()).map(([name, value]) => ({ name, value }))
     } else {
       containerDef.environment = containerDef.environment.map(object => ({
         name: object.name,
-        value: env
-            .get(object.name)
-            .required()
-            .asString() || object.value
+        value: env.get(object.name).required(false).asString() || object.value
       }))
     }
     console.log(containerDef.environment);
