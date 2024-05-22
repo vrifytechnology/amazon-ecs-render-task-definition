@@ -50,6 +50,10 @@ async function run() {
       containerDef.logConfiguration.options["awslogs-group"] = logGroup;
     }
 
+    if (serviceFamily) {
+      taskDefContents.family = serviceFamily;
+    }
+
     if (envList) {
       const environmentMap = new Map(containerDef.environment.map(e => [e.name, e.value]))
       envList.forEach(variable => {
@@ -68,9 +72,6 @@ async function run() {
       }))
     }
     console.log(containerDef.environment);
-    if (serviceFamily) {
-      taskDefContents.family = serviceFamily;
-    }
 
     if (environmentVariables) {
 
