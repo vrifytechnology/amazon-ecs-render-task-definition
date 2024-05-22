@@ -45,7 +45,6 @@ async function run() {
 
     if (envList) {
       const environmentMap = new Map(containerDef.environment.map(e => [e.name, e.value]))
-
       envList.forEach(variable => {
         console.log(variable)
         try {
@@ -54,9 +53,7 @@ async function run() {
           console.log(e)
         }
       })
-
       containerDef.environment = Array.from(environmentMap.entries()).map(([name, value]) => ({ name, value }))
-      console.log(containerDef.environment)
     } else {
       containerDef.environment = containerDef.environment.map(object => ({
         name: object.name,
