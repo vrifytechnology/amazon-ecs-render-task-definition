@@ -13,11 +13,18 @@ async function run() {
     const logGroup = core.getInput('log-group', { required: false });
     const serviceFamily = core.getInput('service-family', { required: false });
     let envList = core.getInput('env-list', { required: false });
-    console.log(envList)
     if (envList) {
       envList = JSON.parse(envList)
     }
     console.log(envList)
+
+    const environmentVariables = core.getInput('environment-variables', { required: false });
+    const envFiles = core.getInput('env-files', { required: false });
+
+    const logConfigurationLogDriver = core.getInput("log-configuration-log-driver", { required: false });
+    const logConfigurationOptions = core.getInput("log-configuration-options", { required: false });
+    const dockerLabels = core.getInput('docker-labels', { required: false });
+    const command = core.getInput('command', { required: false });
 
     // Parse the task definition
     const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
@@ -43,6 +50,10 @@ async function run() {
       containerDef.logConfiguration.options["awslogs-group"] = logGroup;
     }
 
+    if (serviceFamily) {
+      taskDefContents.family = serviceFamily;
+    }
+
     if (envList) {
       const environmentMap = new Map(containerDef.environment.map(e => [e.name, e.value]))
       envList.forEach(variable => {
@@ -61,8 +72,140 @@ async function run() {
       }))
     }
     console.log(containerDef.environment);
-    if (serviceFamily) {
-      taskDefContents.family = serviceFamily;
+
+    if (environmentVariables) {
+
+      // If environment array is missing, create it
+      if (!Array.isArray(containerDef.environment)) {
+        containerDef.environment = [];
+      }
+
+      // Get pairs by splitting on newlines
+      environmentVariables.split('\n').forEach(function (line) {
+        // Trim whitespace
+        const trimmedLine = line.trim();
+        // Skip if empty
+        if (trimmedLine.length === 0) { return; }
+        // Split on =
+        const separatorIdx = trimmedLine.indexOf("=");
+        // If there's nowhere to split
+        if (separatorIdx === -1) {
+            throw new Error(`Cannot parse the environment variable '${trimmedLine}'. Environment variable pairs must be of the form NAME=value.`);
+        }
+        // Build object
+        const variable = {
+          name: trimmedLine.substring(0, separatorIdx),
+          value: trimmedLine.substring(separatorIdx + 1),
+        };
+
+        // Search container definition environment for one matching name
+        const variableDef = containerDef.environment.find((e) => e.name == variable.name);
+        if (variableDef) {
+          // If found, update
+          variableDef.value = variable.value;
+        } else {
+          // Else, create
+          containerDef.environment.push(variable);
+        }
+      })
+    }
+
+
+    if (command) {
+      containerDef.command = command.split(' ')
+    }
+
+    if (envFiles) {
+      containerDef.environmentFiles = [];
+      envFiles.split('\n').forEach(function (line) {
+        // Trim whitespace
+        const trimmedLine = line.trim();
+        // Skip if empty
+        if (trimmedLine.length === 0) { return; }
+        // Build object
+        const variable = {
+          value: trimmedLine,
+          type: "s3",
+        };
+        containerDef.environmentFiles.push(variable);
+      })
+    }
+
+    if (environmentVariables) {
+      // If environment array is missing, create it
+      if (!Array.isArray(containerDef.environment)) {
+        containerDef.environment = [];
+      }
+      // Get pairs by splitting on newlines
+      environmentVariables.split('\n').forEach(function (line) {
+        // Trim whitespace
+        const trimmedLine = line.trim();
+        // Skip if empty
+        if (trimmedLine.length === 0) { return; }
+        // Split on =
+        const separatorIdx = trimmedLine.indexOf("=");
+        // If there's nowhere to split
+        if (separatorIdx === -1) {
+          throw new Error(`Cannot parse the environment variable '${trimmedLine}'. Environment variable pairs must be of the form NAME=value.`);
+        }
+        // Build object
+        const variable = {
+          name: trimmedLine.substring(0, separatorIdx),
+          value: trimmedLine.substring(separatorIdx + 1),
+        };
+
+        // Search container definition environment for one matching name
+        const variableDef = containerDef.environment.find((e) => e.name == variable.name);
+        if (variableDef) {
+          // If found, update
+          variableDef.value = variable.value;
+        } else {
+          // Else, create
+          containerDef.environment.push(variable);
+        }
+      })
+    }
+
+    if (logConfigurationLogDriver) {
+      if (!containerDef.logConfiguration) { containerDef.logConfiguration = {} }
+      const validDrivers = ["json-file", "syslog", "journald", "logentries", "gelf", "fluentd", "awslogs", "splunk", "awsfirelens"];
+      if (!validDrivers.includes(logConfigurationLogDriver)) {
+        throw new Error(`'${logConfigurationLogDriver}' is invalid logConfigurationLogDriver. valid options are ${validDrivers}. More details: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html`)
+      }
+      containerDef.logConfiguration.logDriver = logConfigurationLogDriver
+    }
+
+    if (logConfigurationOptions) {
+      if (!containerDef.logConfiguration) { containerDef.logConfiguration = {} }
+      if (!containerDef.logConfiguration.options) { containerDef.logConfiguration.options = {} }
+      logConfigurationOptions.split("\n").forEach(function (option) {
+        option = option.trim();
+        if (option && option.length) { // not a blank line
+          if (option.indexOf("=") == -1) {
+            throw new Error(`Can't parse logConfiguration option ${option}. Must be in key=value format, one per line`);
+          }
+          const [key, value] = option.split("=");
+          containerDef.logConfiguration.options[key] = value
+        }
+      })
+    }
+
+    if (dockerLabels) {
+      // If dockerLabels object is missing, create it
+      if (!containerDef.dockerLabels) { containerDef.dockerLabels = {} }
+
+      // Get pairs by splitting on newlines
+      dockerLabels.split('\n').forEach(function (label) {
+        // Trim whitespace
+        label = label.trim();
+        if (label && label.length) {
+          if (label.indexOf("=") == -1 ) {
+            throw new Error(`Can't parse logConfiguration option ${label}. Must be in key=value format, one per line`);
+          }
+          const [key, value] = label.split("=");
+          containerDef.dockerLabels[key] = value;
+        }
+      })
     }
 
     // Write out a new task definition file
