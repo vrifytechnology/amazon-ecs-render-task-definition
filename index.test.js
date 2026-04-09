@@ -41,7 +41,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')                                // task-definition file
             .mockReturnValueOnce('web')                                                 // container-name
             .mockReturnValueOnce('nginx:latest')                                        // image
-            .mockReturnValueOnce('')                                                    // log-group
             .mockReturnValueOnce('')                                                    // env-list
             .mockReturnValueOnce('FOO=bar\nHELLO=world')                                // environment-variables
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env') // env-files
@@ -269,7 +268,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('/hello/task-definition.json')                          // task-definition
             .mockReturnValueOnce('web')                                                  // container-name
             .mockReturnValueOnce('nginx:latest')                                         // image
-            .mockReturnValueOnce('log-group')
             .mockReturnValueOnce('["RUNNER_TEMP"]')                                      // env-list
             .mockReturnValueOnce('EXAMPLE=here')                                         // environment-variables
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env')   // env-files
@@ -316,7 +314,7 @@ describe('Render task definition', () => {
                         image: "nginx:latest",
                         logConfiguration: {
                             options: {
-                                "awslogs-group": "log-group",
+                                "awslogs-group": "",
                             },
                         },
                         environment: [
@@ -350,7 +348,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('FOO=bar\nHELLO=world')
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env')
@@ -499,7 +496,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')
             .mockReturnValueOnce('')
@@ -577,7 +573,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')                                // task definition
             .mockReturnValueOnce('web')                                                 // conatiner name
             .mockReturnValueOnce('nginx:latest')                                        // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')                                        // environment-variables
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env') // env-files
@@ -600,7 +595,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('')                           // task definition
             .mockReturnValueOnce('')                           // conatiner name
             .mockReturnValueOnce('')                           // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('')                           // environment-variables
             .mockReturnValueOnce('')                           // env-files
@@ -627,7 +621,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('')                           // task definition 
             .mockReturnValueOnce('')                           // conatiner name
             .mockReturnValueOnce('')                           // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('')                           // environment-variables
             .mockReturnValueOnce('')                           // env-files
@@ -655,7 +648,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('')                           // task definition
             .mockReturnValueOnce('')                           // conatiner name
             .mockReturnValueOnce('')                           // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('')                           // environment-variables
             .mockReturnValueOnce('')                           // env-files
@@ -683,7 +675,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')                                // task definition
             .mockReturnValueOnce('web')                                                 // conatiner name
             .mockReturnValueOnce('nginx:latest')                                        // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')                                        // environment-variables
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env') // env-files
@@ -708,7 +699,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')                                // task definition 
             .mockReturnValueOnce('web')                                                 // conatiner name
             .mockReturnValueOnce('nginx:latest')                                        // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')                                        // environment-variables
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env') // env-files
@@ -733,7 +723,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('')                           // task definition
             .mockReturnValueOnce('')                           // conatiner name
             .mockReturnValueOnce('')                           // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('')                           // environment-variables
             .mockReturnValueOnce('')                           // env-files
@@ -760,7 +749,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('')                           // task definition
             .mockReturnValueOnce('')                           // conatiner name
             .mockReturnValueOnce('')                           // image
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('')                           // environment-variables
             .mockReturnValueOnce('')                           // env-files
@@ -783,7 +771,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env')
@@ -881,7 +868,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('/hello/task-definition.json')
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('') // env-list
             .mockReturnValueOnce('EXAMPLE=here')
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env')
@@ -973,7 +959,6 @@ describe('Render task definition', () => {
             .mockReturnValueOnce('task-definition.json')
             .mockReturnValueOnce('web')
             .mockReturnValueOnce('nginx:latest')
-            .mockReturnValueOnce('')
             .mockReturnValueOnce('')  // env-list
             .mockReturnValueOnce('EXAMPLE=here')
             .mockReturnValueOnce('arn:aws:s3:::s3_bucket_name/envfile_object_name.env')

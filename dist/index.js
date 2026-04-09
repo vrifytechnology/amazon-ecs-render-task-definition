@@ -45,7 +45,6 @@ async function run() {
     const taskDefinitionFile = core.getInput('task-definition', { required: false });
     const containerName = core.getInput('container-name', { required: true });
     const imageURI = core.getInput('image', { required: true });
-    const logGroup = core.getInput('log-group', { required: false });
     let envList = core.getInput('env-list', { required: false });
     if (envList) {
       envList = JSON.parse(envList)
@@ -129,10 +128,6 @@ async function run() {
         throw new Error('Invalid task definition: Could not find container definition with matching name');
       }
       containerDef.image = imageURI;
-
-      if (logGroup) {
-        containerDef.logConfiguration.options['awslogs-group'] = logGroup;
-      }
 
       if (envList) {
         if (!Array.isArray(containerDef.environment)) {

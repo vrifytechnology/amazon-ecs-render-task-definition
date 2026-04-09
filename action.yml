@@ -22,9 +22,6 @@ inputs:
   image:
     description: 'The URI of the container image to insert into the ECS task definition'
     required: true
-  log-group:
-    description: 'The log group to set for the task'
-    required: false
   env-list:
     description: 'A list of variables to pull from the environment'
     required: false
