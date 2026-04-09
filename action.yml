@@ -6,9 +6,18 @@ branding:
 inputs:
   task-definition:
     description: 'The path to the ECS task definition JSON file'
-    required: true
+    required: false
+  task-definition-arn:
+    description: 'The full Amazon Resource Name (ARN) of the task definition to be used'
+    required: false
+  task-definition-family:
+    description: 'The name of a family that the task definition is registered to'
+    required: false
+  task-definition-revision:
+    description: 'The revision of the task definition being used'
+    required: false
   container-name:
-    description: 'The name of the container defined in the containerDefinitions section of the ECS task definition'
+    description: 'The name of the container or containers defined in the containerDefinitions section of the ECS task definition. If more than one container, add the names comma separated.'
     required: true
   image:
     description: 'The URI of the container image to insert into the ECS task definition'
@@ -40,9 +49,12 @@ inputs:
   env-files:
     description: 'S3 object arns to set env variables onto the container. You can specify multiple files with multi-line YAML strings.'
     required: false
+  secrets:
+    description: 'Secrets to add to the container. Each secret is of the form KEY=valueFrom, where valueFrom is a secret arn. You can specify multiple secrets with multi-line YAML strings.'
+    required: false
 outputs:
   task-definition:
     description: 'The path to the rendered task definition file'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
