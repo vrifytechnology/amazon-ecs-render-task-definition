@@ -3,1055 +3,13 @@ exports.id = 998;
 exports.ids = [998];
 exports.modules = {
 
-/***/ 2041:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.resolveHttpAuthSchemeConfig = exports.defaultSSOHttpAuthSchemeProvider = exports.defaultSSOHttpAuthSchemeParametersProvider = void 0;
-const core_1 = __webpack_require__(8704);
-const util_middleware_1 = __webpack_require__(6324);
-const defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
-    return {
-        operation: (0, util_middleware_1.getSmithyContext)(context).operation,
-        region: (await (0, util_middleware_1.normalizeProvider)(config.region)()) ||
-            (() => {
-                throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
-            })(),
-    };
-};
-exports.defaultSSOHttpAuthSchemeParametersProvider = defaultSSOHttpAuthSchemeParametersProvider;
-function createAwsAuthSigv4HttpAuthOption(authParameters) {
-    return {
-        schemeId: "aws.auth#sigv4",
-        signingProperties: {
-            name: "awsssoportal",
-            region: authParameters.region,
-        },
-        propertiesExtractor: (config, context) => ({
-            signingProperties: {
-                config,
-                context,
-            },
-        }),
-    };
-}
-function createSmithyApiNoAuthHttpAuthOption(authParameters) {
-    return {
-        schemeId: "smithy.api#noAuth",
-    };
-}
-const defaultSSOHttpAuthSchemeProvider = (authParameters) => {
-    const options = [];
-    switch (authParameters.operation) {
-        case "GetRoleCredentials": {
-            options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
-            break;
-        }
-        case "ListAccountRoles": {
-            options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
-            break;
-        }
-        case "ListAccounts": {
-            options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
-            break;
-        }
-        case "Logout": {
-            options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
-            break;
-        }
-        default: {
-            options.push(createAwsAuthSigv4HttpAuthOption(authParameters));
-        }
-    }
-    return options;
-};
-exports.defaultSSOHttpAuthSchemeProvider = defaultSSOHttpAuthSchemeProvider;
-const resolveHttpAuthSchemeConfig = (config) => {
-    const config_0 = (0, core_1.resolveAwsSdkSigV4Config)(config);
-    return Object.assign(config_0, {
-        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config.authSchemePreference ?? []),
-    });
-};
-exports.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig;
-
-
-/***/ }),
-
-/***/ 3903:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.defaultEndpointResolver = void 0;
-const util_endpoints_1 = __webpack_require__(3068);
-const util_endpoints_2 = __webpack_require__(9674);
-const ruleset_1 = __webpack_require__(1308);
-const cache = new util_endpoints_2.EndpointCache({
-    size: 50,
-    params: ["Endpoint", "Region", "UseDualStack", "UseFIPS"],
-});
-const defaultEndpointResolver = (endpointParams, context = {}) => {
-    return cache.get(endpointParams, () => (0, util_endpoints_2.resolveEndpoint)(ruleset_1.ruleSet, {
-        endpointParams: endpointParams,
-        logger: context.logger,
-    }));
-};
-exports.defaultEndpointResolver = defaultEndpointResolver;
-util_endpoints_2.customEndpointFunctions.aws = util_endpoints_1.awsEndpointFunctions;
-
-
-/***/ }),
-
-/***/ 1308:
-/***/ ((__unused_webpack_module, exports) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ruleSet = void 0;
-const u = "required", v = "fn", w = "argv", x = "ref";
-const a = true, b = "isSet", c = "booleanEquals", d = "error", e = "endpoint", f = "tree", g = "PartitionResult", h = "getAttr", i = { [u]: false, "type": "string" }, j = { [u]: true, "default": false, "type": "boolean" }, k = { [x]: "Endpoint" }, l = { [v]: c, [w]: [{ [x]: "UseFIPS" }, true] }, m = { [v]: c, [w]: [{ [x]: "UseDualStack" }, true] }, n = {}, o = { [v]: h, [w]: [{ [x]: g }, "supportsFIPS"] }, p = { [x]: g }, q = { [v]: c, [w]: [true, { [v]: h, [w]: [p, "supportsDualStack"] }] }, r = [l], s = [m], t = [{ [x]: "Region" }];
-const _data = { version: "1.0", parameters: { Region: i, UseDualStack: j, UseFIPS: j, Endpoint: i }, rules: [{ conditions: [{ [v]: b, [w]: [k] }], rules: [{ conditions: r, error: "Invalid Configuration: FIPS and custom endpoint are not supported", type: d }, { conditions: s, error: "Invalid Configuration: Dualstack and custom endpoint are not supported", type: d }, { endpoint: { url: k, properties: n, headers: n }, type: e }], type: f }, { conditions: [{ [v]: b, [w]: t }], rules: [{ conditions: [{ [v]: "aws.partition", [w]: t, assign: g }], rules: [{ conditions: [l, m], rules: [{ conditions: [{ [v]: c, [w]: [a, o] }, q], rules: [{ endpoint: { url: "https://portal.sso-fips.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS and DualStack are enabled, but this partition does not support one or both", type: d }], type: f }, { conditions: r, rules: [{ conditions: [{ [v]: c, [w]: [o, a] }], rules: [{ conditions: [{ [v]: "stringEquals", [w]: [{ [v]: h, [w]: [p, "name"] }, "aws-us-gov"] }], endpoint: { url: "https://portal.sso.{Region}.amazonaws.com", properties: n, headers: n }, type: e }, { endpoint: { url: "https://portal.sso-fips.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "FIPS is enabled but this partition does not support FIPS", type: d }], type: f }, { conditions: s, rules: [{ conditions: [q], rules: [{ endpoint: { url: "https://portal.sso.{Region}.{PartitionResult#dualStackDnsSuffix}", properties: n, headers: n }, type: e }], type: f }, { error: "DualStack is enabled but this partition does not support DualStack", type: d }], type: f }, { endpoint: { url: "https://portal.sso.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n }, type: e }], type: f }], type: f }, { error: "Invalid Configuration: Missing Region", type: d }] };
-exports.ruleSet = _data;
-
-
-/***/ }),
-
-/***/ 2054:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-
-var middlewareHostHeader = __webpack_require__(2590);
-var middlewareLogger = __webpack_require__(5242);
-var middlewareRecursionDetection = __webpack_require__(1568);
-var middlewareUserAgent = __webpack_require__(2959);
-var configResolver = __webpack_require__(9316);
-var core = __webpack_require__(402);
-var middlewareContentLength = __webpack_require__(7212);
-var middlewareEndpoint = __webpack_require__(99);
-var middlewareRetry = __webpack_require__(9618);
-var smithyClient = __webpack_require__(1411);
-var httpAuthSchemeProvider = __webpack_require__(2041);
-var runtimeConfig = __webpack_require__(2696);
-var regionConfigResolver = __webpack_require__(6463);
-var protocolHttp = __webpack_require__(2356);
-var middlewareSerde = __webpack_require__(3255);
-var core$1 = __webpack_require__(8704);
-
-const resolveClientEndpointParameters = (options) => {
-    return Object.assign(options, {
-        useDualstackEndpoint: options.useDualstackEndpoint ?? false,
-        useFipsEndpoint: options.useFipsEndpoint ?? false,
-        defaultSigningName: "awsssoportal",
-    });
-};
-const commonParams = {
-    UseFIPS: { type: "builtInParams", name: "useFipsEndpoint" },
-    Endpoint: { type: "builtInParams", name: "endpoint" },
-    Region: { type: "builtInParams", name: "region" },
-    UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" },
-};
-
-const getHttpAuthExtensionConfiguration = (runtimeConfig) => {
-    const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
-    let _httpAuthSchemeProvider = runtimeConfig.httpAuthSchemeProvider;
-    let _credentials = runtimeConfig.credentials;
-    return {
-        setHttpAuthScheme(httpAuthScheme) {
-            const index = _httpAuthSchemes.findIndex((scheme) => scheme.schemeId === httpAuthScheme.schemeId);
-            if (index === -1) {
-                _httpAuthSchemes.push(httpAuthScheme);
-            }
-            else {
-                _httpAuthSchemes.splice(index, 1, httpAuthScheme);
-            }
-        },
-        httpAuthSchemes() {
-            return _httpAuthSchemes;
-        },
-        setHttpAuthSchemeProvider(httpAuthSchemeProvider) {
-            _httpAuthSchemeProvider = httpAuthSchemeProvider;
-        },
-        httpAuthSchemeProvider() {
-            return _httpAuthSchemeProvider;
-        },
-        setCredentials(credentials) {
-            _credentials = credentials;
-        },
-        credentials() {
-            return _credentials;
-        },
-    };
-};
-const resolveHttpAuthRuntimeConfig = (config) => {
-    return {
-        httpAuthSchemes: config.httpAuthSchemes(),
-        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
-        credentials: config.credentials(),
-    };
-};
-
-const resolveRuntimeExtensions = (runtimeConfig, extensions) => {
-    const extensionConfiguration = Object.assign(regionConfigResolver.getAwsRegionExtensionConfiguration(runtimeConfig), smithyClient.getDefaultExtensionConfiguration(runtimeConfig), protocolHttp.getHttpHandlerExtensionConfiguration(runtimeConfig), getHttpAuthExtensionConfiguration(runtimeConfig));
-    extensions.forEach((extension) => extension.configure(extensionConfiguration));
-    return Object.assign(runtimeConfig, regionConfigResolver.resolveAwsRegionExtensionConfiguration(extensionConfiguration), smithyClient.resolveDefaultRuntimeConfig(extensionConfiguration), protocolHttp.resolveHttpHandlerRuntimeConfig(extensionConfiguration), resolveHttpAuthRuntimeConfig(extensionConfiguration));
-};
-
-class SSOClient extends smithyClient.Client {
-    config;
-    constructor(...[configuration]) {
-        const _config_0 = runtimeConfig.getRuntimeConfig(configuration || {});
-        super(_config_0);
-        this.initConfig = _config_0;
-        const _config_1 = resolveClientEndpointParameters(_config_0);
-        const _config_2 = middlewareUserAgent.resolveUserAgentConfig(_config_1);
-        const _config_3 = middlewareRetry.resolveRetryConfig(_config_2);
-        const _config_4 = configResolver.resolveRegionConfig(_config_3);
-        const _config_5 = middlewareHostHeader.resolveHostHeaderConfig(_config_4);
-        const _config_6 = middlewareEndpoint.resolveEndpointConfig(_config_5);
-        const _config_7 = httpAuthSchemeProvider.resolveHttpAuthSchemeConfig(_config_6);
-        const _config_8 = resolveRuntimeExtensions(_config_7, configuration?.extensions || []);
-        this.config = _config_8;
-        this.middlewareStack.use(middlewareUserAgent.getUserAgentPlugin(this.config));
-        this.middlewareStack.use(middlewareRetry.getRetryPlugin(this.config));
-        this.middlewareStack.use(middlewareContentLength.getContentLengthPlugin(this.config));
-        this.middlewareStack.use(middlewareHostHeader.getHostHeaderPlugin(this.config));
-        this.middlewareStack.use(middlewareLogger.getLoggerPlugin(this.config));
-        this.middlewareStack.use(middlewareRecursionDetection.getRecursionDetectionPlugin(this.config));
-        this.middlewareStack.use(core.getHttpAuthSchemeEndpointRuleSetPlugin(this.config, {
-            httpAuthSchemeParametersProvider: httpAuthSchemeProvider.defaultSSOHttpAuthSchemeParametersProvider,
-            identityProviderConfigProvider: async (config) => new core.DefaultIdentityProviderConfig({
-                "aws.auth#sigv4": config.credentials,
-            }),
-        }));
-        this.middlewareStack.use(core.getHttpSigningPlugin(this.config));
-    }
-    destroy() {
-        super.destroy();
-    }
-}
-
-class SSOServiceException extends smithyClient.ServiceException {
-    constructor(options) {
-        super(options);
-        Object.setPrototypeOf(this, SSOServiceException.prototype);
-    }
-}
-
-class InvalidRequestException extends SSOServiceException {
-    name = "InvalidRequestException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "InvalidRequestException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, InvalidRequestException.prototype);
-    }
-}
-class ResourceNotFoundException extends SSOServiceException {
-    name = "ResourceNotFoundException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "ResourceNotFoundException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, ResourceNotFoundException.prototype);
-    }
-}
-class TooManyRequestsException extends SSOServiceException {
-    name = "TooManyRequestsException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "TooManyRequestsException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, TooManyRequestsException.prototype);
-    }
-}
-class UnauthorizedException extends SSOServiceException {
-    name = "UnauthorizedException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "UnauthorizedException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, UnauthorizedException.prototype);
-    }
-}
-const GetRoleCredentialsRequestFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.accessToken && { accessToken: smithyClient.SENSITIVE_STRING }),
-});
-const RoleCredentialsFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.secretAccessKey && { secretAccessKey: smithyClient.SENSITIVE_STRING }),
-    ...(obj.sessionToken && { sessionToken: smithyClient.SENSITIVE_STRING }),
-});
-const GetRoleCredentialsResponseFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.roleCredentials && { roleCredentials: RoleCredentialsFilterSensitiveLog(obj.roleCredentials) }),
-});
-const ListAccountRolesRequestFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.accessToken && { accessToken: smithyClient.SENSITIVE_STRING }),
-});
-const ListAccountsRequestFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.accessToken && { accessToken: smithyClient.SENSITIVE_STRING }),
-});
-const LogoutRequestFilterSensitiveLog = (obj) => ({
-    ...obj,
-    ...(obj.accessToken && { accessToken: smithyClient.SENSITIVE_STRING }),
-});
-
-const se_GetRoleCredentialsCommand = async (input, context) => {
-    const b = core.requestBuilder(input, context);
-    const headers = smithyClient.map({}, smithyClient.isSerializableHeaderValue, {
-        [_xasbt]: input[_aT],
-    });
-    b.bp("/federation/credentials");
-    const query = smithyClient.map({
-        [_rn]: [, smithyClient.expectNonNull(input[_rN], `roleName`)],
-        [_ai]: [, smithyClient.expectNonNull(input[_aI], `accountId`)],
-    });
-    let body;
-    b.m("GET").h(headers).q(query).b(body);
-    return b.build();
-};
-const se_ListAccountRolesCommand = async (input, context) => {
-    const b = core.requestBuilder(input, context);
-    const headers = smithyClient.map({}, smithyClient.isSerializableHeaderValue, {
-        [_xasbt]: input[_aT],
-    });
-    b.bp("/assignment/roles");
-    const query = smithyClient.map({
-        [_nt]: [, input[_nT]],
-        [_mr]: [() => input.maxResults !== void 0, () => input[_mR].toString()],
-        [_ai]: [, smithyClient.expectNonNull(input[_aI], `accountId`)],
-    });
-    let body;
-    b.m("GET").h(headers).q(query).b(body);
-    return b.build();
-};
-const se_ListAccountsCommand = async (input, context) => {
-    const b = core.requestBuilder(input, context);
-    const headers = smithyClient.map({}, smithyClient.isSerializableHeaderValue, {
-        [_xasbt]: input[_aT],
-    });
-    b.bp("/assignment/accounts");
-    const query = smithyClient.map({
-        [_nt]: [, input[_nT]],
-        [_mr]: [() => input.maxResults !== void 0, () => input[_mR].toString()],
-    });
-    let body;
-    b.m("GET").h(headers).q(query).b(body);
-    return b.build();
-};
-const se_LogoutCommand = async (input, context) => {
-    const b = core.requestBuilder(input, context);
-    const headers = smithyClient.map({}, smithyClient.isSerializableHeaderValue, {
-        [_xasbt]: input[_aT],
-    });
-    b.bp("/logout");
-    let body;
-    b.m("POST").h(headers).b(body);
-    return b.build();
-};
-const de_GetRoleCredentialsCommand = async (output, context) => {
-    if (output.statusCode !== 200 && output.statusCode >= 300) {
-        return de_CommandError(output, context);
-    }
-    const contents = smithyClient.map({
-        $metadata: deserializeMetadata(output),
-    });
-    const data = smithyClient.expectNonNull(smithyClient.expectObject(await core$1.parseJsonBody(output.body, context)), "body");
-    const doc = smithyClient.take(data, {
-        roleCredentials: smithyClient._json,
-    });
-    Object.assign(contents, doc);
-    return contents;
-};
-const de_ListAccountRolesCommand = async (output, context) => {
-    if (output.statusCode !== 200 && output.statusCode >= 300) {
-        return de_CommandError(output, context);
-    }
-    const contents = smithyClient.map({
-        $metadata: deserializeMetadata(output),
-    });
-    const data = smithyClient.expectNonNull(smithyClient.expectObject(await core$1.parseJsonBody(output.body, context)), "body");
-    const doc = smithyClient.take(data, {
-        nextToken: smithyClient.expectString,
-        roleList: smithyClient._json,
-    });
-    Object.assign(contents, doc);
-    return contents;
-};
-const de_ListAccountsCommand = async (output, context) => {
-    if (output.statusCode !== 200 && output.statusCode >= 300) {
-        return de_CommandError(output, context);
-    }
-    const contents = smithyClient.map({
-        $metadata: deserializeMetadata(output),
-    });
-    const data = smithyClient.expectNonNull(smithyClient.expectObject(await core$1.parseJsonBody(output.body, context)), "body");
-    const doc = smithyClient.take(data, {
-        accountList: smithyClient._json,
-        nextToken: smithyClient.expectString,
-    });
-    Object.assign(contents, doc);
-    return contents;
-};
-const de_LogoutCommand = async (output, context) => {
-    if (output.statusCode !== 200 && output.statusCode >= 300) {
-        return de_CommandError(output, context);
-    }
-    const contents = smithyClient.map({
-        $metadata: deserializeMetadata(output),
-    });
-    await smithyClient.collectBody(output.body, context);
-    return contents;
-};
-const de_CommandError = async (output, context) => {
-    const parsedOutput = {
-        ...output,
-        body: await core$1.parseJsonErrorBody(output.body, context),
-    };
-    const errorCode = core$1.loadRestJsonErrorCode(output, parsedOutput.body);
-    switch (errorCode) {
-        case "InvalidRequestException":
-        case "com.amazonaws.sso#InvalidRequestException":
-            throw await de_InvalidRequestExceptionRes(parsedOutput);
-        case "ResourceNotFoundException":
-        case "com.amazonaws.sso#ResourceNotFoundException":
-            throw await de_ResourceNotFoundExceptionRes(parsedOutput);
-        case "TooManyRequestsException":
-        case "com.amazonaws.sso#TooManyRequestsException":
-            throw await de_TooManyRequestsExceptionRes(parsedOutput);
-        case "UnauthorizedException":
-        case "com.amazonaws.sso#UnauthorizedException":
-            throw await de_UnauthorizedExceptionRes(parsedOutput);
-        default:
-            const parsedBody = parsedOutput.body;
-            return throwDefaultError({
-                output,
-                parsedBody,
-                errorCode,
-            });
-    }
-};
-const throwDefaultError = smithyClient.withBaseException(SSOServiceException);
-const de_InvalidRequestExceptionRes = async (parsedOutput, context) => {
-    const contents = smithyClient.map({});
-    const data = parsedOutput.body;
-    const doc = smithyClient.take(data, {
-        message: smithyClient.expectString,
-    });
-    Object.assign(contents, doc);
-    const exception = new InvalidRequestException({
-        $metadata: deserializeMetadata(parsedOutput),
-        ...contents,
-    });
-    return smithyClient.decorateServiceException(exception, parsedOutput.body);
-};
-const de_ResourceNotFoundExceptionRes = async (parsedOutput, context) => {
-    const contents = smithyClient.map({});
-    const data = parsedOutput.body;
-    const doc = smithyClient.take(data, {
-        message: smithyClient.expectString,
-    });
-    Object.assign(contents, doc);
-    const exception = new ResourceNotFoundException({
-        $metadata: deserializeMetadata(parsedOutput),
-        ...contents,
-    });
-    return smithyClient.decorateServiceException(exception, parsedOutput.body);
-};
-const de_TooManyRequestsExceptionRes = async (parsedOutput, context) => {
-    const contents = smithyClient.map({});
-    const data = parsedOutput.body;
-    const doc = smithyClient.take(data, {
-        message: smithyClient.expectString,
-    });
-    Object.assign(contents, doc);
-    const exception = new TooManyRequestsException({
-        $metadata: deserializeMetadata(parsedOutput),
-        ...contents,
-    });
-    return smithyClient.decorateServiceException(exception, parsedOutput.body);
-};
-const de_UnauthorizedExceptionRes = async (parsedOutput, context) => {
-    const contents = smithyClient.map({});
-    const data = parsedOutput.body;
-    const doc = smithyClient.take(data, {
-        message: smithyClient.expectString,
-    });
-    Object.assign(contents, doc);
-    const exception = new UnauthorizedException({
-        $metadata: deserializeMetadata(parsedOutput),
-        ...contents,
-    });
-    return smithyClient.decorateServiceException(exception, parsedOutput.body);
-};
-const deserializeMetadata = (output) => ({
-    httpStatusCode: output.statusCode,
-    requestId: output.headers["x-amzn-requestid"] ?? output.headers["x-amzn-request-id"] ?? output.headers["x-amz-request-id"],
-    extendedRequestId: output.headers["x-amz-id-2"],
-    cfId: output.headers["x-amz-cf-id"],
-});
-const _aI = "accountId";
-const _aT = "accessToken";
-const _ai = "account_id";
-const _mR = "maxResults";
-const _mr = "max_result";
-const _nT = "nextToken";
-const _nt = "next_token";
-const _rN = "roleName";
-const _rn = "role_name";
-const _xasbt = "x-amz-sso_bearer_token";
-
-class GetRoleCredentialsCommand extends smithyClient.Command
-    .classBuilder()
-    .ep(commonParams)
-    .m(function (Command, cs, config, o) {
-    return [
-        middlewareSerde.getSerdePlugin(config, this.serialize, this.deserialize),
-        middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions()),
-    ];
-})
-    .s("SWBPortalService", "GetRoleCredentials", {})
-    .n("SSOClient", "GetRoleCredentialsCommand")
-    .f(GetRoleCredentialsRequestFilterSensitiveLog, GetRoleCredentialsResponseFilterSensitiveLog)
-    .ser(se_GetRoleCredentialsCommand)
-    .de(de_GetRoleCredentialsCommand)
-    .build() {
-}
-
-class ListAccountRolesCommand extends smithyClient.Command
-    .classBuilder()
-    .ep(commonParams)
-    .m(function (Command, cs, config, o) {
-    return [
-        middlewareSerde.getSerdePlugin(config, this.serialize, this.deserialize),
-        middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions()),
-    ];
-})
-    .s("SWBPortalService", "ListAccountRoles", {})
-    .n("SSOClient", "ListAccountRolesCommand")
-    .f(ListAccountRolesRequestFilterSensitiveLog, void 0)
-    .ser(se_ListAccountRolesCommand)
-    .de(de_ListAccountRolesCommand)
-    .build() {
-}
-
-class ListAccountsCommand extends smithyClient.Command
-    .classBuilder()
-    .ep(commonParams)
-    .m(function (Command, cs, config, o) {
-    return [
-        middlewareSerde.getSerdePlugin(config, this.serialize, this.deserialize),
-        middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions()),
-    ];
-})
-    .s("SWBPortalService", "ListAccounts", {})
-    .n("SSOClient", "ListAccountsCommand")
-    .f(ListAccountsRequestFilterSensitiveLog, void 0)
-    .ser(se_ListAccountsCommand)
-    .de(de_ListAccountsCommand)
-    .build() {
-}
-
-class LogoutCommand extends smithyClient.Command
-    .classBuilder()
-    .ep(commonParams)
-    .m(function (Command, cs, config, o) {
-    return [
-        middlewareSerde.getSerdePlugin(config, this.serialize, this.deserialize),
-        middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions()),
-    ];
-})
-    .s("SWBPortalService", "Logout", {})
-    .n("SSOClient", "LogoutCommand")
-    .f(LogoutRequestFilterSensitiveLog, void 0)
-    .ser(se_LogoutCommand)
-    .de(de_LogoutCommand)
-    .build() {
-}
-
-const commands = {
-    GetRoleCredentialsCommand,
-    ListAccountRolesCommand,
-    ListAccountsCommand,
-    LogoutCommand,
-};
-class SSO extends SSOClient {
-}
-smithyClient.createAggregatedClient(commands, SSO);
-
-const paginateListAccountRoles = core.createPaginator(SSOClient, ListAccountRolesCommand, "nextToken", "nextToken", "maxResults");
-
-const paginateListAccounts = core.createPaginator(SSOClient, ListAccountsCommand, "nextToken", "nextToken", "maxResults");
-
-Object.defineProperty(exports, "$Command", ({
-    enumerable: true,
-    get: function () { return smithyClient.Command; }
-}));
-Object.defineProperty(exports, "__Client", ({
-    enumerable: true,
-    get: function () { return smithyClient.Client; }
-}));
-exports.GetRoleCredentialsCommand = GetRoleCredentialsCommand;
-exports.GetRoleCredentialsRequestFilterSensitiveLog = GetRoleCredentialsRequestFilterSensitiveLog;
-exports.GetRoleCredentialsResponseFilterSensitiveLog = GetRoleCredentialsResponseFilterSensitiveLog;
-exports.InvalidRequestException = InvalidRequestException;
-exports.ListAccountRolesCommand = ListAccountRolesCommand;
-exports.ListAccountRolesRequestFilterSensitiveLog = ListAccountRolesRequestFilterSensitiveLog;
-exports.ListAccountsCommand = ListAccountsCommand;
-exports.ListAccountsRequestFilterSensitiveLog = ListAccountsRequestFilterSensitiveLog;
-exports.LogoutCommand = LogoutCommand;
-exports.LogoutRequestFilterSensitiveLog = LogoutRequestFilterSensitiveLog;
-exports.ResourceNotFoundException = ResourceNotFoundException;
-exports.RoleCredentialsFilterSensitiveLog = RoleCredentialsFilterSensitiveLog;
-exports.SSO = SSO;
-exports.SSOClient = SSOClient;
-exports.SSOServiceException = SSOServiceException;
-exports.TooManyRequestsException = TooManyRequestsException;
-exports.UnauthorizedException = UnauthorizedException;
-exports.paginateListAccountRoles = paginateListAccountRoles;
-exports.paginateListAccounts = paginateListAccounts;
-
-
-/***/ }),
-
-/***/ 2696:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getRuntimeConfig = void 0;
-const tslib_1 = __webpack_require__(1860);
-const package_json_1 = tslib_1.__importDefault(__webpack_require__(5188));
-const core_1 = __webpack_require__(8704);
-const util_user_agent_node_1 = __webpack_require__(1656);
-const config_resolver_1 = __webpack_require__(9316);
-const hash_node_1 = __webpack_require__(5092);
-const middleware_retry_1 = __webpack_require__(9618);
-const node_config_provider_1 = __webpack_require__(5704);
-const node_http_handler_1 = __webpack_require__(1279);
-const util_body_length_node_1 = __webpack_require__(3638);
-const util_retry_1 = __webpack_require__(5518);
-const runtimeConfig_shared_1 = __webpack_require__(8073);
-const smithy_client_1 = __webpack_require__(1411);
-const util_defaults_mode_node_1 = __webpack_require__(5435);
-const smithy_client_2 = __webpack_require__(1411);
-const getRuntimeConfig = (config) => {
-    (0, smithy_client_2.emitWarningIfUnsupportedVersion)(process.version);
-    const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
-    const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
-    const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
-    (0, core_1.emitWarningIfUnsupportedVersion)(process.version);
-    const loaderConfig = {
-        profile: config?.profile,
-        logger: clientSharedValues.logger,
-    };
-    return {
-        ...clientSharedValues,
-        ...config,
-        runtime: "node",
-        defaultsMode,
-        authSchemePreference: config?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(core_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
-        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
-        defaultUserAgentProvider: config?.defaultUserAgentProvider ??
-            (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
-        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
-        region: config?.region ??
-            (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
-        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
-        retryMode: config?.retryMode ??
-            (0, node_config_provider_1.loadConfig)({
-                ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
-                default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE,
-            }, config),
-        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
-        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
-        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
-        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig),
-    };
-};
-exports.getRuntimeConfig = getRuntimeConfig;
-
-
-/***/ }),
-
-/***/ 8073:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getRuntimeConfig = void 0;
-const core_1 = __webpack_require__(8704);
-const core_2 = __webpack_require__(402);
-const smithy_client_1 = __webpack_require__(1411);
-const url_parser_1 = __webpack_require__(4494);
-const util_base64_1 = __webpack_require__(8385);
-const util_utf8_1 = __webpack_require__(1577);
-const httpAuthSchemeProvider_1 = __webpack_require__(2041);
-const endpointResolver_1 = __webpack_require__(3903);
-const getRuntimeConfig = (config) => {
-    return {
-        apiVersion: "2019-06-10",
-        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
-        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
-        disableHostPrefix: config?.disableHostPrefix ?? false,
-        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
-        extensions: config?.extensions ?? [],
-        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSSOHttpAuthSchemeProvider,
-        httpAuthSchemes: config?.httpAuthSchemes ?? [
-            {
-                schemeId: "aws.auth#sigv4",
-                identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
-                signer: new core_1.AwsSdkSigV4Signer(),
-            },
-            {
-                schemeId: "smithy.api#noAuth",
-                identityProvider: (ipc) => ipc.getIdentityProvider("smithy.api#noAuth") || (async () => ({})),
-                signer: new core_2.NoAuthSigner(),
-            },
-        ],
-        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
-        serviceId: config?.serviceId ?? "SSO",
-        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
-        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
-        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8,
-    };
-};
-exports.getRuntimeConfig = getRuntimeConfig;
-
-
-/***/ }),
-
-/***/ 7523:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-
-var protocolHttp = __webpack_require__(2356);
-var core = __webpack_require__(402);
-var propertyProvider = __webpack_require__(1238);
-var client = __webpack_require__(5152);
-var signatureV4 = __webpack_require__(5118);
-
-const getDateHeader = (response) => protocolHttp.HttpResponse.isInstance(response) ? response.headers?.date ?? response.headers?.Date : undefined;
-
-const getSkewCorrectedDate = (systemClockOffset) => new Date(Date.now() + systemClockOffset);
-
-const isClockSkewed = (clockTime, systemClockOffset) => Math.abs(getSkewCorrectedDate(systemClockOffset).getTime() - clockTime) >= 300000;
-
-const getUpdatedSystemClockOffset = (clockTime, currentSystemClockOffset) => {
-    const clockTimeInMs = Date.parse(clockTime);
-    if (isClockSkewed(clockTimeInMs, currentSystemClockOffset)) {
-        return clockTimeInMs - Date.now();
-    }
-    return currentSystemClockOffset;
-};
-
-const throwSigningPropertyError = (name, property) => {
-    if (!property) {
-        throw new Error(`Property \`${name}\` is not resolved for AWS SDK SigV4Auth`);
-    }
-    return property;
-};
-const validateSigningProperties = async (signingProperties) => {
-    const context = throwSigningPropertyError("context", signingProperties.context);
-    const config = throwSigningPropertyError("config", signingProperties.config);
-    const authScheme = context.endpointV2?.properties?.authSchemes?.[0];
-    const signerFunction = throwSigningPropertyError("signer", config.signer);
-    const signer = await signerFunction(authScheme);
-    const signingRegion = signingProperties?.signingRegion;
-    const signingRegionSet = signingProperties?.signingRegionSet;
-    const signingName = signingProperties?.signingName;
-    return {
-        config,
-        signer,
-        signingRegion,
-        signingRegionSet,
-        signingName,
-    };
-};
-class AwsSdkSigV4Signer {
-    async sign(httpRequest, identity, signingProperties) {
-        if (!protocolHttp.HttpRequest.isInstance(httpRequest)) {
-            throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
-        }
-        const validatedProps = await validateSigningProperties(signingProperties);
-        const { config, signer } = validatedProps;
-        let { signingRegion, signingName } = validatedProps;
-        const handlerExecutionContext = signingProperties.context;
-        if (handlerExecutionContext?.authSchemes?.length ?? 0 > 1) {
-            const [first, second] = handlerExecutionContext.authSchemes;
-            if (first?.name === "sigv4a" && second?.name === "sigv4") {
-                signingRegion = second?.signingRegion ?? signingRegion;
-                signingName = second?.signingName ?? signingName;
-            }
-        }
-        const signedRequest = await signer.sign(httpRequest, {
-            signingDate: getSkewCorrectedDate(config.systemClockOffset),
-            signingRegion: signingRegion,
-            signingService: signingName,
-        });
-        return signedRequest;
-    }
-    errorHandler(signingProperties) {
-        return (error) => {
-            const serverTime = error.ServerTime ?? getDateHeader(error.$response);
-            if (serverTime) {
-                const config = throwSigningPropertyError("config", signingProperties.config);
-                const initialSystemClockOffset = config.systemClockOffset;
-                config.systemClockOffset = getUpdatedSystemClockOffset(serverTime, config.systemClockOffset);
-                const clockSkewCorrected = config.systemClockOffset !== initialSystemClockOffset;
-                if (clockSkewCorrected && error.$metadata) {
-                    error.$metadata.clockSkewCorrected = true;
-                }
-            }
-            throw error;
-        };
-    }
-    successHandler(httpResponse, signingProperties) {
-        const dateHeader = getDateHeader(httpResponse);
-        if (dateHeader) {
-            const config = throwSigningPropertyError("config", signingProperties.config);
-            config.systemClockOffset = getUpdatedSystemClockOffset(dateHeader, config.systemClockOffset);
-        }
-    }
-}
-const AWSSDKSigV4Signer = AwsSdkSigV4Signer;
-
-class AwsSdkSigV4ASigner extends AwsSdkSigV4Signer {
-    async sign(httpRequest, identity, signingProperties) {
-        if (!protocolHttp.HttpRequest.isInstance(httpRequest)) {
-            throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
-        }
-        const { config, signer, signingRegion, signingRegionSet, signingName } = await validateSigningProperties(signingProperties);
-        const configResolvedSigningRegionSet = await config.sigv4aSigningRegionSet?.();
-        const multiRegionOverride = (configResolvedSigningRegionSet ??
-            signingRegionSet ?? [signingRegion]).join(",");
-        const signedRequest = await signer.sign(httpRequest, {
-            signingDate: getSkewCorrectedDate(config.systemClockOffset),
-            signingRegion: multiRegionOverride,
-            signingService: signingName,
-        });
-        return signedRequest;
-    }
-}
-
-const getArrayForCommaSeparatedString = (str) => typeof str === "string" && str.length > 0 ? str.split(",").map((item) => item.trim()) : [];
-
-const getBearerTokenEnvKey = (signingName) => `AWS_BEARER_TOKEN_${signingName.replace(/[\s-]/g, "_").toUpperCase()}`;
-
-const NODE_AUTH_SCHEME_PREFERENCE_ENV_KEY = "AWS_AUTH_SCHEME_PREFERENCE";
-const NODE_AUTH_SCHEME_PREFERENCE_CONFIG_KEY = "auth_scheme_preference";
-const NODE_AUTH_SCHEME_PREFERENCE_OPTIONS = {
-    environmentVariableSelector: (env, options) => {
-        if (options?.signingName) {
-            const bearerTokenKey = getBearerTokenEnvKey(options.signingName);
-            if (bearerTokenKey in env)
-                return ["httpBearerAuth"];
-        }
-        if (!(NODE_AUTH_SCHEME_PREFERENCE_ENV_KEY in env))
-            return undefined;
-        return getArrayForCommaSeparatedString(env[NODE_AUTH_SCHEME_PREFERENCE_ENV_KEY]);
-    },
-    configFileSelector: (profile) => {
-        if (!(NODE_AUTH_SCHEME_PREFERENCE_CONFIG_KEY in profile))
-            return undefined;
-        return getArrayForCommaSeparatedString(profile[NODE_AUTH_SCHEME_PREFERENCE_CONFIG_KEY]);
-    },
-    default: [],
-};
-
-const resolveAwsSdkSigV4AConfig = (config) => {
-    config.sigv4aSigningRegionSet = core.normalizeProvider(config.sigv4aSigningRegionSet);
-    return config;
-};
-const NODE_SIGV4A_CONFIG_OPTIONS = {
-    environmentVariableSelector(env) {
-        if (env.AWS_SIGV4A_SIGNING_REGION_SET) {
-            return env.AWS_SIGV4A_SIGNING_REGION_SET.split(",").map((_) => _.trim());
-        }
-        throw new propertyProvider.ProviderError("AWS_SIGV4A_SIGNING_REGION_SET not set in env.", {
-            tryNextLink: true,
-        });
-    },
-    configFileSelector(profile) {
-        if (profile.sigv4a_signing_region_set) {
-            return (profile.sigv4a_signing_region_set ?? "").split(",").map((_) => _.trim());
-        }
-        throw new propertyProvider.ProviderError("sigv4a_signing_region_set not set in profile.", {
-            tryNextLink: true,
-        });
-    },
-    default: undefined,
-};
-
-const resolveAwsSdkSigV4Config = (config) => {
-    let inputCredentials = config.credentials;
-    let isUserSupplied = !!config.credentials;
-    let resolvedCredentials = undefined;
-    Object.defineProperty(config, "credentials", {
-        set(credentials) {
-            if (credentials && credentials !== inputCredentials && credentials !== resolvedCredentials) {
-                isUserSupplied = true;
-            }
-            inputCredentials = credentials;
-            const memoizedProvider = normalizeCredentialProvider(config, {
-                credentials: inputCredentials,
-                credentialDefaultProvider: config.credentialDefaultProvider,
-            });
-            const boundProvider = bindCallerConfig(config, memoizedProvider);
-            if (isUserSupplied && !boundProvider.attributed) {
-                resolvedCredentials = async (options) => boundProvider(options).then((creds) => client.setCredentialFeature(creds, "CREDENTIALS_CODE", "e"));
-                resolvedCredentials.memoized = boundProvider.memoized;
-                resolvedCredentials.configBound = boundProvider.configBound;
-                resolvedCredentials.attributed = true;
-            }
-            else {
-                resolvedCredentials = boundProvider;
-            }
-        },
-        get() {
-            return resolvedCredentials;
-        },
-        enumerable: true,
-        configurable: true,
-    });
-    config.credentials = inputCredentials;
-    const { signingEscapePath = true, systemClockOffset = config.systemClockOffset || 0, sha256, } = config;
-    let signer;
-    if (config.signer) {
-        signer = core.normalizeProvider(config.signer);
-    }
-    else if (config.regionInfoProvider) {
-        signer = () => core.normalizeProvider(config.region)()
-            .then(async (region) => [
-            (await config.regionInfoProvider(region, {
-                useFipsEndpoint: await config.useFipsEndpoint(),
-                useDualstackEndpoint: await config.useDualstackEndpoint(),
-            })) || {},
-            region,
-        ])
-            .then(([regionInfo, region]) => {
-            const { signingRegion, signingService } = regionInfo;
-            config.signingRegion = config.signingRegion || signingRegion || region;
-            config.signingName = config.signingName || signingService || config.serviceId;
-            const params = {
-                ...config,
-                credentials: config.credentials,
-                region: config.signingRegion,
-                service: config.signingName,
-                sha256,
-                uriEscapePath: signingEscapePath,
-            };
-            const SignerCtor = config.signerConstructor || signatureV4.SignatureV4;
-            return new SignerCtor(params);
-        });
-    }
-    else {
-        signer = async (authScheme) => {
-            authScheme = Object.assign({}, {
-                name: "sigv4",
-                signingName: config.signingName || config.defaultSigningName,
-                signingRegion: await core.normalizeProvider(config.region)(),
-                properties: {},
-            }, authScheme);
-            const signingRegion = authScheme.signingRegion;
-            const signingService = authScheme.signingName;
-            config.signingRegion = config.signingRegion || signingRegion;
-            config.signingName = config.signingName || signingService || config.serviceId;
-            const params = {
-                ...config,
-                credentials: config.credentials,
-                region: config.signingRegion,
-                service: config.signingName,
-                sha256,
-                uriEscapePath: signingEscapePath,
-            };
-            const SignerCtor = config.signerConstructor || signatureV4.SignatureV4;
-            return new SignerCtor(params);
-        };
-    }
-    const resolvedConfig = Object.assign(config, {
-        systemClockOffset,
-        signingEscapePath,
-        signer,
-    });
-    return resolvedConfig;
-};
-const resolveAWSSDKSigV4Config = resolveAwsSdkSigV4Config;
-function normalizeCredentialProvider(config, { credentials, credentialDefaultProvider, }) {
-    let credentialsProvider;
-    if (credentials) {
-        if (!credentials?.memoized) {
-            credentialsProvider = core.memoizeIdentityProvider(credentials, core.isIdentityExpired, core.doesIdentityRequireRefresh);
-        }
-        else {
-            credentialsProvider = credentials;
-        }
-    }
-    else {
-        if (credentialDefaultProvider) {
-            credentialsProvider = core.normalizeProvider(credentialDefaultProvider(Object.assign({}, config, {
-                parentClientConfig: config,
-            })));
-        }
-        else {
-            credentialsProvider = async () => {
-                throw new Error("@aws-sdk/core::resolveAwsSdkSigV4Config - `credentials` not provided and no credentialDefaultProvider was configured.");
-            };
-        }
-    }
-    credentialsProvider.memoized = true;
-    return credentialsProvider;
-}
-function bindCallerConfig(config, credentialsProvider) {
-    if (credentialsProvider.configBound) {
-        return credentialsProvider;
-    }
-    const fn = async (options) => credentialsProvider({ ...options, callerClientConfig: config });
-    fn.memoized = credentialsProvider.memoized;
-    fn.configBound = true;
-    return fn;
-}
-
-exports.AWSSDKSigV4Signer = AWSSDKSigV4Signer;
-exports.AwsSdkSigV4ASigner = AwsSdkSigV4ASigner;
-exports.AwsSdkSigV4Signer = AwsSdkSigV4Signer;
-exports.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS = NODE_AUTH_SCHEME_PREFERENCE_OPTIONS;
-exports.NODE_SIGV4A_CONFIG_OPTIONS = NODE_SIGV4A_CONFIG_OPTIONS;
-exports.getBearerTokenEnvKey = getBearerTokenEnvKey;
-exports.resolveAWSSDKSigV4Config = resolveAWSSDKSigV4Config;
-exports.resolveAwsSdkSigV4AConfig = resolveAwsSdkSigV4AConfig;
-exports.resolveAwsSdkSigV4Config = resolveAwsSdkSigV4Config;
-exports.validateSigningProperties = validateSigningProperties;
-
-
-/***/ }),
-
 /***/ 998:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 var __webpack_unused_export__;
 
 
-var propertyProvider = __webpack_require__(1238);
+var propertyProvider = __webpack_require__(8857);
 var sharedIniFileLoader = __webpack_require__(4964);
 var client = __webpack_require__(5152);
 var tokenProviders = __webpack_require__(5433);
@@ -1064,7 +22,7 @@ const isSsoProfile = (arg) => arg &&
         typeof arg.sso_role_name === "string");
 
 const SHOULD_FAIL_CREDENTIAL_CHAIN = false;
-const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ssoRegion, ssoRoleName, ssoClient, clientConfig, parentClientConfig, profile, filepath, configFilepath, ignoreCache, logger, }) => {
+const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ssoRegion, ssoRoleName, ssoClient, clientConfig, parentClientConfig, callerClientConfig, profile, filepath, configFilepath, ignoreCache, logger, }) => {
     let token;
     const refreshMessage = `To refresh this SSO session run aws sso login with the corresponding profile.`;
     if (ssoSession) {
@@ -1105,12 +63,12 @@ const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ss
         });
     }
     const { accessToken } = token;
-    const { SSOClient, GetRoleCredentialsCommand } = await Promise.resolve().then(function () { return __webpack_require__(6553); });
+    const { SSOClient, GetRoleCredentialsCommand } = await Promise.resolve().then(function () { return __webpack_require__(1853); });
     const sso = ssoClient ||
         new SSOClient(Object.assign({}, clientConfig ?? {}, {
-            logger: clientConfig?.logger ?? parentClientConfig?.logger,
+            logger: clientConfig?.logger ?? callerClientConfig?.logger ?? parentClientConfig?.logger,
             region: clientConfig?.region ?? ssoRegion,
-            userAgentAppId: clientConfig?.userAgentAppId ?? parentClientConfig?.userAgentAppId,
+            userAgentAppId: clientConfig?.userAgentAppId ?? callerClientConfig?.userAgentAppId ?? parentClientConfig?.userAgentAppId,
         }));
     let ssoResp;
     try {
@@ -1206,6 +164,7 @@ const fromSSO = (init = {}) => async ({ callerClientConfig } = {}) => {
             ssoClient: ssoClient,
             clientConfig: init.clientConfig,
             parentClientConfig: init.parentClientConfig,
+            callerClientConfig: init.callerClientConfig,
             profile: profileName,
             filepath: init.filepath,
             configFilepath: init.configFilepath,
@@ -1227,6 +186,7 @@ const fromSSO = (init = {}) => async ({ callerClientConfig } = {}) => {
             ssoClient,
             clientConfig: init.clientConfig,
             parentClientConfig: init.parentClientConfig,
+            callerClientConfig: init.callerClientConfig,
             profile: profileName,
             filepath: init.filepath,
             configFilepath: init.configFilepath,
@@ -1243,23 +203,681 @@ __webpack_unused_export__ = validateSsoProfile;
 
 /***/ }),
 
-/***/ 6553:
+/***/ 1853:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 
-var clientSso = __webpack_require__(2054);
+var sso = __webpack_require__(2579);
 
 
 
-Object.defineProperty(exports, "GetRoleCredentialsCommand", ({
-	enumerable: true,
-	get: function () { return clientSso.GetRoleCredentialsCommand; }
-}));
-Object.defineProperty(exports, "SSOClient", ({
-	enumerable: true,
-	get: function () { return clientSso.SSOClient; }
-}));
+exports.GetRoleCredentialsCommand = sso.GetRoleCredentialsCommand;
+exports.SSOClient = sso.SSOClient;
+
+
+/***/ }),
+
+/***/ 7452:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.resolveHttpAuthSchemeConfig = exports.defaultSSOHttpAuthSchemeProvider = exports.defaultSSOHttpAuthSchemeParametersProvider = void 0;
+const httpAuthSchemes_1 = __webpack_require__(7523);
+const util_middleware_1 = __webpack_require__(6324);
+const defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
+    return {
+        operation: (0, util_middleware_1.getSmithyContext)(context).operation,
+        region: (await (0, util_middleware_1.normalizeProvider)(config.region)()) ||
+            (() => {
+                throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
+            })(),
+    };
+};
+exports.defaultSSOHttpAuthSchemeParametersProvider = defaultSSOHttpAuthSchemeParametersProvider;
+function createAwsAuthSigv4HttpAuthOption(authParameters) {
+    return {
+        schemeId: "aws.auth#sigv4",
+        signingProperties: {
+            name: "awsssoportal",
+            region: authParameters.region,
+        },
+        propertiesExtractor: (config, context) => ({
+            signingProperties: {
+                config,
+                context,
+            },
+        }),
+    };
+}
+function createSmithyApiNoAuthHttpAuthOption(authParameters) {
+    return {
+        schemeId: "smithy.api#noAuth",
+    };
+}
+const defaultSSOHttpAuthSchemeProvider = (authParameters) => {
+    const options = [];
+    switch (authParameters.operation) {
+        case "GetRoleCredentials": {
+            options.push(createSmithyApiNoAuthHttpAuthOption(authParameters));
+            break;
+        }
+        default: {
+            options.push(createAwsAuthSigv4HttpAuthOption(authParameters));
+        }
+    }
+    return options;
+};
+exports.defaultSSOHttpAuthSchemeProvider = defaultSSOHttpAuthSchemeProvider;
+const resolveHttpAuthSchemeConfig = (config) => {
+    const config_0 = (0, httpAuthSchemes_1.resolveAwsSdkSigV4Config)(config);
+    return Object.assign(config_0, {
+        authSchemePreference: (0, util_middleware_1.normalizeProvider)(config.authSchemePreference ?? []),
+    });
+};
+exports.resolveHttpAuthSchemeConfig = resolveHttpAuthSchemeConfig;
+
+
+/***/ }),
+
+/***/ 5074:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.defaultEndpointResolver = void 0;
+const util_endpoints_1 = __webpack_require__(3068);
+const util_endpoints_2 = __webpack_require__(9674);
+const ruleset_1 = __webpack_require__(203);
+const cache = new util_endpoints_2.EndpointCache({
+    size: 50,
+    params: ["Endpoint", "Region", "UseDualStack", "UseFIPS"],
+});
+const defaultEndpointResolver = (endpointParams, context = {}) => {
+    return cache.get(endpointParams, () => (0, util_endpoints_2.resolveEndpoint)(ruleset_1.ruleSet, {
+        endpointParams: endpointParams,
+        logger: context.logger,
+    }));
+};
+exports.defaultEndpointResolver = defaultEndpointResolver;
+util_endpoints_2.customEndpointFunctions.aws = util_endpoints_1.awsEndpointFunctions;
+
+
+/***/ }),
+
+/***/ 203:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ruleSet = void 0;
+const u = "required", v = "fn", w = "argv", x = "ref";
+const a = true, b = "isSet", c = "booleanEquals", d = "error", e = "endpoint", f = "tree", g = "PartitionResult", h = "getAttr", i = { [u]: false, type: "string" }, j = { [u]: true, default: false, type: "boolean" }, k = { [x]: "Endpoint" }, l = { [v]: c, [w]: [{ [x]: "UseFIPS" }, true] }, m = { [v]: c, [w]: [{ [x]: "UseDualStack" }, true] }, n = {}, o = { [v]: h, [w]: [{ [x]: g }, "supportsFIPS"] }, p = { [x]: g }, q = { [v]: c, [w]: [true, { [v]: h, [w]: [p, "supportsDualStack"] }] }, r = [l], s = [m], t = [{ [x]: "Region" }];
+const _data = {
+    version: "1.0",
+    parameters: { Region: i, UseDualStack: j, UseFIPS: j, Endpoint: i },
+    rules: [
+        {
+            conditions: [{ [v]: b, [w]: [k] }],
+            rules: [
+                { conditions: r, error: "Invalid Configuration: FIPS and custom endpoint are not supported", type: d },
+                { conditions: s, error: "Invalid Configuration: Dualstack and custom endpoint are not supported", type: d },
+                { endpoint: { url: k, properties: n, headers: n }, type: e },
+            ],
+            type: f,
+        },
+        {
+            conditions: [{ [v]: b, [w]: t }],
+            rules: [
+                {
+                    conditions: [{ [v]: "aws.partition", [w]: t, assign: g }],
+                    rules: [
+                        {
+                            conditions: [l, m],
+                            rules: [
+                                {
+                                    conditions: [{ [v]: c, [w]: [a, o] }, q],
+                                    rules: [
+                                        {
+                                            endpoint: {
+                                                url: "https://portal.sso-fips.{Region}.{PartitionResult#dualStackDnsSuffix}",
+                                                properties: n,
+                                                headers: n,
+                                            },
+                                            type: e,
+                                        },
+                                    ],
+                                    type: f,
+                                },
+                                { error: "FIPS and DualStack are enabled, but this partition does not support one or both", type: d },
+                            ],
+                            type: f,
+                        },
+                        {
+                            conditions: r,
+                            rules: [
+                                {
+                                    conditions: [{ [v]: c, [w]: [o, a] }],
+                                    rules: [
+                                        {
+                                            conditions: [{ [v]: "stringEquals", [w]: [{ [v]: h, [w]: [p, "name"] }, "aws-us-gov"] }],
+                                            endpoint: { url: "https://portal.sso.{Region}.amazonaws.com", properties: n, headers: n },
+                                            type: e,
+                                        },
+                                        {
+                                            endpoint: {
+                                                url: "https://portal.sso-fips.{Region}.{PartitionResult#dnsSuffix}",
+                                                properties: n,
+                                                headers: n,
+                                            },
+                                            type: e,
+                                        },
+                                    ],
+                                    type: f,
+                                },
+                                { error: "FIPS is enabled but this partition does not support FIPS", type: d },
+                            ],
+                            type: f,
+                        },
+                        {
+                            conditions: s,
+                            rules: [
+                                {
+                                    conditions: [q],
+                                    rules: [
+                                        {
+                                            endpoint: {
+                                                url: "https://portal.sso.{Region}.{PartitionResult#dualStackDnsSuffix}",
+                                                properties: n,
+                                                headers: n,
+                                            },
+                                            type: e,
+                                        },
+                                    ],
+                                    type: f,
+                                },
+                                { error: "DualStack is enabled but this partition does not support DualStack", type: d },
+                            ],
+                            type: f,
+                        },
+                        {
+                            endpoint: { url: "https://portal.sso.{Region}.{PartitionResult#dnsSuffix}", properties: n, headers: n },
+                            type: e,
+                        },
+                    ],
+                    type: f,
+                },
+            ],
+            type: f,
+        },
+        { error: "Invalid Configuration: Missing Region", type: d },
+    ],
+};
+exports.ruleSet = _data;
+
+
+/***/ }),
+
+/***/ 2579:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+
+var middlewareHostHeader = __webpack_require__(2590);
+var middlewareLogger = __webpack_require__(5242);
+var middlewareRecursionDetection = __webpack_require__(1568);
+var middlewareUserAgent = __webpack_require__(2959);
+var configResolver = __webpack_require__(9316);
+var core = __webpack_require__(402);
+var schema = __webpack_require__(6890);
+var middlewareContentLength = __webpack_require__(7212);
+var middlewareEndpoint = __webpack_require__(99);
+var middlewareRetry = __webpack_require__(9618);
+var smithyClient = __webpack_require__(1411);
+var httpAuthSchemeProvider = __webpack_require__(7452);
+var runtimeConfig = __webpack_require__(5541);
+var regionConfigResolver = __webpack_require__(6463);
+var protocolHttp = __webpack_require__(2356);
+var schemas_0 = __webpack_require__(2167);
+var errors = __webpack_require__(4483);
+var SSOServiceException = __webpack_require__(9849);
+
+const resolveClientEndpointParameters = (options) => {
+    return Object.assign(options, {
+        useDualstackEndpoint: options.useDualstackEndpoint ?? false,
+        useFipsEndpoint: options.useFipsEndpoint ?? false,
+        defaultSigningName: "awsssoportal",
+    });
+};
+const commonParams = {
+    UseFIPS: { type: "builtInParams", name: "useFipsEndpoint" },
+    Endpoint: { type: "builtInParams", name: "endpoint" },
+    Region: { type: "builtInParams", name: "region" },
+    UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" },
+};
+
+const getHttpAuthExtensionConfiguration = (runtimeConfig) => {
+    const _httpAuthSchemes = runtimeConfig.httpAuthSchemes;
+    let _httpAuthSchemeProvider = runtimeConfig.httpAuthSchemeProvider;
+    let _credentials = runtimeConfig.credentials;
+    return {
+        setHttpAuthScheme(httpAuthScheme) {
+            const index = _httpAuthSchemes.findIndex((scheme) => scheme.schemeId === httpAuthScheme.schemeId);
+            if (index === -1) {
+                _httpAuthSchemes.push(httpAuthScheme);
+            }
+            else {
+                _httpAuthSchemes.splice(index, 1, httpAuthScheme);
+            }
+        },
+        httpAuthSchemes() {
+            return _httpAuthSchemes;
+        },
+        setHttpAuthSchemeProvider(httpAuthSchemeProvider) {
+            _httpAuthSchemeProvider = httpAuthSchemeProvider;
+        },
+        httpAuthSchemeProvider() {
+            return _httpAuthSchemeProvider;
+        },
+        setCredentials(credentials) {
+            _credentials = credentials;
+        },
+        credentials() {
+            return _credentials;
+        },
+    };
+};
+const resolveHttpAuthRuntimeConfig = (config) => {
+    return {
+        httpAuthSchemes: config.httpAuthSchemes(),
+        httpAuthSchemeProvider: config.httpAuthSchemeProvider(),
+        credentials: config.credentials(),
+    };
+};
+
+const resolveRuntimeExtensions = (runtimeConfig, extensions) => {
+    const extensionConfiguration = Object.assign(regionConfigResolver.getAwsRegionExtensionConfiguration(runtimeConfig), smithyClient.getDefaultExtensionConfiguration(runtimeConfig), protocolHttp.getHttpHandlerExtensionConfiguration(runtimeConfig), getHttpAuthExtensionConfiguration(runtimeConfig));
+    extensions.forEach((extension) => extension.configure(extensionConfiguration));
+    return Object.assign(runtimeConfig, regionConfigResolver.resolveAwsRegionExtensionConfiguration(extensionConfiguration), smithyClient.resolveDefaultRuntimeConfig(extensionConfiguration), protocolHttp.resolveHttpHandlerRuntimeConfig(extensionConfiguration), resolveHttpAuthRuntimeConfig(extensionConfiguration));
+};
+
+class SSOClient extends smithyClient.Client {
+    config;
+    constructor(...[configuration]) {
+        const _config_0 = runtimeConfig.getRuntimeConfig(configuration || {});
+        super(_config_0);
+        this.initConfig = _config_0;
+        const _config_1 = resolveClientEndpointParameters(_config_0);
+        const _config_2 = middlewareUserAgent.resolveUserAgentConfig(_config_1);
+        const _config_3 = middlewareRetry.resolveRetryConfig(_config_2);
+        const _config_4 = configResolver.resolveRegionConfig(_config_3);
+        const _config_5 = middlewareHostHeader.resolveHostHeaderConfig(_config_4);
+        const _config_6 = middlewareEndpoint.resolveEndpointConfig(_config_5);
+        const _config_7 = httpAuthSchemeProvider.resolveHttpAuthSchemeConfig(_config_6);
+        const _config_8 = resolveRuntimeExtensions(_config_7, configuration?.extensions || []);
+        this.config = _config_8;
+        this.middlewareStack.use(schema.getSchemaSerdePlugin(this.config));
+        this.middlewareStack.use(middlewareUserAgent.getUserAgentPlugin(this.config));
+        this.middlewareStack.use(middlewareRetry.getRetryPlugin(this.config));
+        this.middlewareStack.use(middlewareContentLength.getContentLengthPlugin(this.config));
+        this.middlewareStack.use(middlewareHostHeader.getHostHeaderPlugin(this.config));
+        this.middlewareStack.use(middlewareLogger.getLoggerPlugin(this.config));
+        this.middlewareStack.use(middlewareRecursionDetection.getRecursionDetectionPlugin(this.config));
+        this.middlewareStack.use(core.getHttpAuthSchemeEndpointRuleSetPlugin(this.config, {
+            httpAuthSchemeParametersProvider: httpAuthSchemeProvider.defaultSSOHttpAuthSchemeParametersProvider,
+            identityProviderConfigProvider: async (config) => new core.DefaultIdentityProviderConfig({
+                "aws.auth#sigv4": config.credentials,
+            }),
+        }));
+        this.middlewareStack.use(core.getHttpSigningPlugin(this.config));
+    }
+    destroy() {
+        super.destroy();
+    }
+}
+
+class GetRoleCredentialsCommand extends smithyClient.Command
+    .classBuilder()
+    .ep(commonParams)
+    .m(function (Command, cs, config, o) {
+    return [middlewareEndpoint.getEndpointPlugin(config, Command.getEndpointParameterInstructions())];
+})
+    .s("SWBPortalService", "GetRoleCredentials", {})
+    .n("SSOClient", "GetRoleCredentialsCommand")
+    .sc(schemas_0.GetRoleCredentials$)
+    .build() {
+}
+
+const commands = {
+    GetRoleCredentialsCommand,
+};
+class SSO extends SSOClient {
+}
+smithyClient.createAggregatedClient(commands, SSO);
+
+exports.$Command = smithyClient.Command;
+exports.__Client = smithyClient.Client;
+exports.SSOServiceException = SSOServiceException.SSOServiceException;
+exports.GetRoleCredentialsCommand = GetRoleCredentialsCommand;
+exports.SSO = SSO;
+exports.SSOClient = SSOClient;
+Object.prototype.hasOwnProperty.call(schemas_0, '__proto__') &&
+    !Object.prototype.hasOwnProperty.call(exports, '__proto__') &&
+    Object.defineProperty(exports, '__proto__', {
+        enumerable: true,
+        value: schemas_0['__proto__']
+    });
+
+Object.keys(schemas_0).forEach(function (k) {
+    if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) exports[k] = schemas_0[k];
+});
+Object.prototype.hasOwnProperty.call(errors, '__proto__') &&
+    !Object.prototype.hasOwnProperty.call(exports, '__proto__') &&
+    Object.defineProperty(exports, '__proto__', {
+        enumerable: true,
+        value: errors['__proto__']
+    });
+
+Object.keys(errors).forEach(function (k) {
+    if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) exports[k] = errors[k];
+});
+
+
+/***/ }),
+
+/***/ 9849:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SSOServiceException = exports.__ServiceException = void 0;
+const smithy_client_1 = __webpack_require__(1411);
+Object.defineProperty(exports, "__ServiceException", ({ enumerable: true, get: function () { return smithy_client_1.ServiceException; } }));
+class SSOServiceException extends smithy_client_1.ServiceException {
+    constructor(options) {
+        super(options);
+        Object.setPrototypeOf(this, SSOServiceException.prototype);
+    }
+}
+exports.SSOServiceException = SSOServiceException;
+
+
+/***/ }),
+
+/***/ 4483:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UnauthorizedException = exports.TooManyRequestsException = exports.ResourceNotFoundException = exports.InvalidRequestException = void 0;
+const SSOServiceException_1 = __webpack_require__(9849);
+class InvalidRequestException extends SSOServiceException_1.SSOServiceException {
+    name = "InvalidRequestException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "InvalidRequestException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, InvalidRequestException.prototype);
+    }
+}
+exports.InvalidRequestException = InvalidRequestException;
+class ResourceNotFoundException extends SSOServiceException_1.SSOServiceException {
+    name = "ResourceNotFoundException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "ResourceNotFoundException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, ResourceNotFoundException.prototype);
+    }
+}
+exports.ResourceNotFoundException = ResourceNotFoundException;
+class TooManyRequestsException extends SSOServiceException_1.SSOServiceException {
+    name = "TooManyRequestsException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "TooManyRequestsException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, TooManyRequestsException.prototype);
+    }
+}
+exports.TooManyRequestsException = TooManyRequestsException;
+class UnauthorizedException extends SSOServiceException_1.SSOServiceException {
+    name = "UnauthorizedException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "UnauthorizedException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, UnauthorizedException.prototype);
+    }
+}
+exports.UnauthorizedException = UnauthorizedException;
+
+
+/***/ }),
+
+/***/ 5541:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getRuntimeConfig = void 0;
+const tslib_1 = __webpack_require__(1860);
+const package_json_1 = tslib_1.__importDefault(__webpack_require__(9955));
+const client_1 = __webpack_require__(5152);
+const httpAuthSchemes_1 = __webpack_require__(7523);
+const util_user_agent_node_1 = __webpack_require__(1656);
+const config_resolver_1 = __webpack_require__(9316);
+const hash_node_1 = __webpack_require__(2711);
+const middleware_retry_1 = __webpack_require__(9618);
+const node_config_provider_1 = __webpack_require__(5704);
+const node_http_handler_1 = __webpack_require__(1279);
+const smithy_client_1 = __webpack_require__(1411);
+const util_body_length_node_1 = __webpack_require__(3638);
+const util_defaults_mode_node_1 = __webpack_require__(5435);
+const util_retry_1 = __webpack_require__(5518);
+const runtimeConfig_shared_1 = __webpack_require__(3082);
+const getRuntimeConfig = (config) => {
+    (0, smithy_client_1.emitWarningIfUnsupportedVersion)(process.version);
+    const defaultsMode = (0, util_defaults_mode_node_1.resolveDefaultsModeConfig)(config);
+    const defaultConfigProvider = () => defaultsMode().then(smithy_client_1.loadConfigsForDefaultMode);
+    const clientSharedValues = (0, runtimeConfig_shared_1.getRuntimeConfig)(config);
+    (0, client_1.emitWarningIfUnsupportedVersion)(process.version);
+    const loaderConfig = {
+        profile: config?.profile,
+        logger: clientSharedValues.logger,
+    };
+    return {
+        ...clientSharedValues,
+        ...config,
+        runtime: "node",
+        defaultsMode,
+        authSchemePreference: config?.authSchemePreference ?? (0, node_config_provider_1.loadConfig)(httpAuthSchemes_1.NODE_AUTH_SCHEME_PREFERENCE_OPTIONS, loaderConfig),
+        bodyLengthChecker: config?.bodyLengthChecker ?? util_body_length_node_1.calculateBodyLength,
+        defaultUserAgentProvider: config?.defaultUserAgentProvider ??
+            (0, util_user_agent_node_1.createDefaultUserAgentProvider)({ serviceId: clientSharedValues.serviceId, clientVersion: package_json_1.default.version }),
+        maxAttempts: config?.maxAttempts ?? (0, node_config_provider_1.loadConfig)(middleware_retry_1.NODE_MAX_ATTEMPT_CONFIG_OPTIONS, config),
+        region: config?.region ??
+            (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_REGION_CONFIG_OPTIONS, { ...config_resolver_1.NODE_REGION_CONFIG_FILE_OPTIONS, ...loaderConfig }),
+        requestHandler: node_http_handler_1.NodeHttpHandler.create(config?.requestHandler ?? defaultConfigProvider),
+        retryMode: config?.retryMode ??
+            (0, node_config_provider_1.loadConfig)({
+                ...middleware_retry_1.NODE_RETRY_MODE_CONFIG_OPTIONS,
+                default: async () => (await defaultConfigProvider()).retryMode || util_retry_1.DEFAULT_RETRY_MODE,
+            }, config),
+        sha256: config?.sha256 ?? hash_node_1.Hash.bind(null, "sha256"),
+        streamCollector: config?.streamCollector ?? node_http_handler_1.streamCollector,
+        useDualstackEndpoint: config?.useDualstackEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_DUALSTACK_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        useFipsEndpoint: config?.useFipsEndpoint ?? (0, node_config_provider_1.loadConfig)(config_resolver_1.NODE_USE_FIPS_ENDPOINT_CONFIG_OPTIONS, loaderConfig),
+        userAgentAppId: config?.userAgentAppId ?? (0, node_config_provider_1.loadConfig)(util_user_agent_node_1.NODE_APP_ID_CONFIG_OPTIONS, loaderConfig),
+    };
+};
+exports.getRuntimeConfig = getRuntimeConfig;
+
+
+/***/ }),
+
+/***/ 3082:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getRuntimeConfig = void 0;
+const httpAuthSchemes_1 = __webpack_require__(7523);
+const protocols_1 = __webpack_require__(7288);
+const core_1 = __webpack_require__(402);
+const smithy_client_1 = __webpack_require__(1411);
+const url_parser_1 = __webpack_require__(4494);
+const util_base64_1 = __webpack_require__(8385);
+const util_utf8_1 = __webpack_require__(1577);
+const httpAuthSchemeProvider_1 = __webpack_require__(7452);
+const endpointResolver_1 = __webpack_require__(5074);
+const schemas_0_1 = __webpack_require__(2167);
+const getRuntimeConfig = (config) => {
+    return {
+        apiVersion: "2019-06-10",
+        base64Decoder: config?.base64Decoder ?? util_base64_1.fromBase64,
+        base64Encoder: config?.base64Encoder ?? util_base64_1.toBase64,
+        disableHostPrefix: config?.disableHostPrefix ?? false,
+        endpointProvider: config?.endpointProvider ?? endpointResolver_1.defaultEndpointResolver,
+        extensions: config?.extensions ?? [],
+        httpAuthSchemeProvider: config?.httpAuthSchemeProvider ?? httpAuthSchemeProvider_1.defaultSSOHttpAuthSchemeProvider,
+        httpAuthSchemes: config?.httpAuthSchemes ?? [
+            {
+                schemeId: "aws.auth#sigv4",
+                identityProvider: (ipc) => ipc.getIdentityProvider("aws.auth#sigv4"),
+                signer: new httpAuthSchemes_1.AwsSdkSigV4Signer(),
+            },
+            {
+                schemeId: "smithy.api#noAuth",
+                identityProvider: (ipc) => ipc.getIdentityProvider("smithy.api#noAuth") || (async () => ({})),
+                signer: new core_1.NoAuthSigner(),
+            },
+        ],
+        logger: config?.logger ?? new smithy_client_1.NoOpLogger(),
+        protocol: config?.protocol ?? protocols_1.AwsRestJsonProtocol,
+        protocolSettings: config?.protocolSettings ?? {
+            defaultNamespace: "com.amazonaws.sso",
+            errorTypeRegistries: schemas_0_1.errorTypeRegistries,
+            version: "2019-06-10",
+            serviceTarget: "SWBPortalService",
+        },
+        serviceId: config?.serviceId ?? "SSO",
+        urlParser: config?.urlParser ?? url_parser_1.parseUrl,
+        utf8Decoder: config?.utf8Decoder ?? util_utf8_1.fromUtf8,
+        utf8Encoder: config?.utf8Encoder ?? util_utf8_1.toUtf8,
+    };
+};
+exports.getRuntimeConfig = getRuntimeConfig;
+
+
+/***/ }),
+
+/***/ 2167:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GetRoleCredentials$ = exports.RoleCredentials$ = exports.GetRoleCredentialsResponse$ = exports.GetRoleCredentialsRequest$ = exports.errorTypeRegistries = exports.UnauthorizedException$ = exports.TooManyRequestsException$ = exports.ResourceNotFoundException$ = exports.InvalidRequestException$ = exports.SSOServiceException$ = void 0;
+const _ATT = "AccessTokenType";
+const _GRC = "GetRoleCredentials";
+const _GRCR = "GetRoleCredentialsRequest";
+const _GRCRe = "GetRoleCredentialsResponse";
+const _IRE = "InvalidRequestException";
+const _RC = "RoleCredentials";
+const _RNFE = "ResourceNotFoundException";
+const _SAKT = "SecretAccessKeyType";
+const _STT = "SessionTokenType";
+const _TMRE = "TooManyRequestsException";
+const _UE = "UnauthorizedException";
+const _aI = "accountId";
+const _aKI = "accessKeyId";
+const _aT = "accessToken";
+const _ai = "account_id";
+const _c = "client";
+const _e = "error";
+const _ex = "expiration";
+const _h = "http";
+const _hE = "httpError";
+const _hH = "httpHeader";
+const _hQ = "httpQuery";
+const _m = "message";
+const _rC = "roleCredentials";
+const _rN = "roleName";
+const _rn = "role_name";
+const _s = "smithy.ts.sdk.synthetic.com.amazonaws.sso";
+const _sAK = "secretAccessKey";
+const _sT = "sessionToken";
+const _xasbt = "x-amz-sso_bearer_token";
+const n0 = "com.amazonaws.sso";
+const schema_1 = __webpack_require__(6890);
+const errors_1 = __webpack_require__(4483);
+const SSOServiceException_1 = __webpack_require__(9849);
+const _s_registry = schema_1.TypeRegistry.for(_s);
+exports.SSOServiceException$ = [-3, _s, "SSOServiceException", 0, [], []];
+_s_registry.registerError(exports.SSOServiceException$, SSOServiceException_1.SSOServiceException);
+const n0_registry = schema_1.TypeRegistry.for(n0);
+exports.InvalidRequestException$ = [-3, n0, _IRE, { [_e]: _c, [_hE]: 400 }, [_m], [0]];
+n0_registry.registerError(exports.InvalidRequestException$, errors_1.InvalidRequestException);
+exports.ResourceNotFoundException$ = [-3, n0, _RNFE, { [_e]: _c, [_hE]: 404 }, [_m], [0]];
+n0_registry.registerError(exports.ResourceNotFoundException$, errors_1.ResourceNotFoundException);
+exports.TooManyRequestsException$ = [-3, n0, _TMRE, { [_e]: _c, [_hE]: 429 }, [_m], [0]];
+n0_registry.registerError(exports.TooManyRequestsException$, errors_1.TooManyRequestsException);
+exports.UnauthorizedException$ = [-3, n0, _UE, { [_e]: _c, [_hE]: 401 }, [_m], [0]];
+n0_registry.registerError(exports.UnauthorizedException$, errors_1.UnauthorizedException);
+exports.errorTypeRegistries = [_s_registry, n0_registry];
+var AccessTokenType = [0, n0, _ATT, 8, 0];
+var SecretAccessKeyType = [0, n0, _SAKT, 8, 0];
+var SessionTokenType = [0, n0, _STT, 8, 0];
+exports.GetRoleCredentialsRequest$ = [
+    3,
+    n0,
+    _GRCR,
+    0,
+    [_rN, _aI, _aT],
+    [
+        [0, { [_hQ]: _rn }],
+        [0, { [_hQ]: _ai }],
+        [() => AccessTokenType, { [_hH]: _xasbt }],
+    ],
+    3,
+];
+exports.GetRoleCredentialsResponse$ = [
+    3,
+    n0,
+    _GRCRe,
+    0,
+    [_rC],
+    [[() => exports.RoleCredentials$, 0]],
+];
+exports.RoleCredentials$ = [
+    3,
+    n0,
+    _RC,
+    0,
+    [_aKI, _sAK, _sT, _ex],
+    [0, [() => SecretAccessKeyType, 0], [() => SessionTokenType, 0], 1],
+];
+exports.GetRoleCredentials$ = [
+    9,
+    n0,
+    _GRC,
+    { [_h]: ["GET", "/federation/credentials", 200] },
+    () => exports.GetRoleCredentialsRequest$,
+    () => exports.GetRoleCredentialsResponse$,
+];
 
 
 /***/ }),
@@ -1271,9 +889,9 @@ Object.defineProperty(exports, "SSOClient", ({
 
 var client = __webpack_require__(5152);
 var httpAuthSchemes = __webpack_require__(7523);
-var propertyProvider = __webpack_require__(1238);
+var propertyProvider = __webpack_require__(8857);
 var sharedIniFileLoader = __webpack_require__(4964);
-var fs = __webpack_require__(9896);
+var node_fs = __webpack_require__(3024);
 
 const fromEnvSigningName = ({ logger, signingName } = {}) => async () => {
     logger?.debug?.("@aws-sdk/token-providers - fromEnvSigningName");
@@ -1292,9 +910,9 @@ const fromEnvSigningName = ({ logger, signingName } = {}) => async () => {
 const EXPIRE_WINDOW_MS = 5 * 60 * 1000;
 const REFRESH_MESSAGE = `To refresh this SSO session run 'aws sso login' with the corresponding profile.`;
 
-const getSsoOidcClient = async (ssoRegion, init = {}) => {
-    const { SSOOIDCClient } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 19));
-    const coalesce = (prop) => init.clientConfig?.[prop] ?? init.parentClientConfig?.[prop];
+const getSsoOidcClient = async (ssoRegion, init = {}, callerClientConfig) => {
+    const { SSOOIDCClient } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 23));
+    const coalesce = (prop) => init.clientConfig?.[prop] ?? init.parentClientConfig?.[prop] ?? callerClientConfig?.[prop];
     const ssoOidcClient = new SSOOIDCClient(Object.assign({}, init.clientConfig ?? {}, {
         region: ssoRegion ?? init.clientConfig?.region,
         logger: coalesce("logger"),
@@ -1303,9 +921,9 @@ const getSsoOidcClient = async (ssoRegion, init = {}) => {
     return ssoOidcClient;
 };
 
-const getNewSsoOidcToken = async (ssoToken, ssoRegion, init = {}) => {
-    const { CreateTokenCommand } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 19));
-    const ssoOidcClient = await getSsoOidcClient(ssoRegion, init);
+const getNewSsoOidcToken = async (ssoToken, ssoRegion, init = {}, callerClientConfig) => {
+    const { CreateTokenCommand } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 23));
+    const ssoOidcClient = await getSsoOidcClient(ssoRegion, init, callerClientConfig);
     return ssoOidcClient.send(new CreateTokenCommand({
         clientId: ssoToken.clientId,
         clientSecret: ssoToken.clientSecret,
@@ -1326,7 +944,7 @@ const validateTokenKey = (key, value, forRefresh = false) => {
     }
 };
 
-const { writeFile } = fs.promises;
+const { writeFile } = node_fs.promises;
 const writeSSOTokenToFile = (id, ssoToken) => {
     const tokenFilepath = sharedIniFileLoader.getSSOTokenFilepath(id);
     const tokenString = JSON.stringify(ssoToken, null, 2);
@@ -1334,14 +952,7 @@ const writeSSOTokenToFile = (id, ssoToken) => {
 };
 
 const lastRefreshAttemptTime = new Date(0);
-const fromSso = (_init = {}) => async ({ callerClientConfig } = {}) => {
-    const init = {
-        ..._init,
-        parentClientConfig: {
-            ...callerClientConfig,
-            ..._init.parentClientConfig,
-        },
-    };
+const fromSso = (init = {}) => async ({ callerClientConfig } = {}) => {
     init.logger?.debug("@aws-sdk/token-providers - fromSso");
     const profiles = await sharedIniFileLoader.parseKnownFiles(init);
     const profileName = sharedIniFileLoader.getProfileName({
@@ -1390,7 +1001,7 @@ const fromSso = (_init = {}) => async ({ callerClientConfig } = {}) => {
     validateTokenKey("refreshToken", ssoToken.refreshToken, true);
     try {
         lastRefreshAttemptTime.setTime(Date.now());
-        const newSsoOidcToken = await getNewSsoOidcToken(ssoToken, ssoRegion, init);
+        const newSsoOidcToken = await getNewSsoOidcToken(ssoToken, ssoRegion, init, callerClientConfig);
         validateTokenKey("accessToken", newSsoOidcToken.accessToken);
         validateTokenKey("expiresIn", newSsoOidcToken.expiresIn);
         const newTokenExpiration = new Date(Date.now() + newSsoOidcToken.expiresIn * 1000);
@@ -1435,10 +1046,10 @@ exports.nodeProvider = nodeProvider;
 
 /***/ }),
 
-/***/ 5188:
+/***/ 9955:
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"name":"@aws-sdk/client-sso","description":"AWS SDK for JavaScript Sso Client for Node.js, Browser and React Native","version":"3.922.0","scripts":{"build":"concurrently \'yarn:build:cjs\' \'yarn:build:es\' \'yarn:build:types\'","build:cjs":"node ../../scripts/compilation/inline client-sso","build:es":"tsc -p tsconfig.es.json","build:include:deps":"lerna run --scope $npm_package_name --include-dependencies build","build:types":"tsc -p tsconfig.types.json","build:types:downlevel":"downlevel-dts dist-types dist-types/ts3.4","clean":"rimraf ./dist-* && rimraf *.tsbuildinfo","extract:docs":"api-extractor run --local","generate:client":"node ../../scripts/generate-clients/single-service --solo sso"},"main":"./dist-cjs/index.js","types":"./dist-types/index.d.ts","module":"./dist-es/index.js","sideEffects":false,"dependencies":{"@aws-crypto/sha256-browser":"5.2.0","@aws-crypto/sha256-js":"5.2.0","@aws-sdk/core":"3.922.0","@aws-sdk/middleware-host-header":"3.922.0","@aws-sdk/middleware-logger":"3.922.0","@aws-sdk/middleware-recursion-detection":"3.922.0","@aws-sdk/middleware-user-agent":"3.922.0","@aws-sdk/region-config-resolver":"3.922.0","@aws-sdk/types":"3.922.0","@aws-sdk/util-endpoints":"3.922.0","@aws-sdk/util-user-agent-browser":"3.922.0","@aws-sdk/util-user-agent-node":"3.922.0","@smithy/config-resolver":"^4.4.1","@smithy/core":"^3.17.2","@smithy/fetch-http-handler":"^5.3.5","@smithy/hash-node":"^4.2.4","@smithy/invalid-dependency":"^4.2.4","@smithy/middleware-content-length":"^4.2.4","@smithy/middleware-endpoint":"^4.3.6","@smithy/middleware-retry":"^4.4.6","@smithy/middleware-serde":"^4.2.4","@smithy/middleware-stack":"^4.2.4","@smithy/node-config-provider":"^4.3.4","@smithy/node-http-handler":"^4.4.4","@smithy/protocol-http":"^5.3.4","@smithy/smithy-client":"^4.9.2","@smithy/types":"^4.8.1","@smithy/url-parser":"^4.2.4","@smithy/util-base64":"^4.3.0","@smithy/util-body-length-browser":"^4.2.0","@smithy/util-body-length-node":"^4.2.1","@smithy/util-defaults-mode-browser":"^4.3.5","@smithy/util-defaults-mode-node":"^4.2.7","@smithy/util-endpoints":"^3.2.4","@smithy/util-middleware":"^4.2.4","@smithy/util-retry":"^4.2.4","@smithy/util-utf8":"^4.2.0","tslib":"^2.6.2"},"devDependencies":{"@tsconfig/node18":"18.2.4","@types/node":"^18.19.69","concurrently":"7.0.0","downlevel-dts":"0.10.1","rimraf":"3.0.2","typescript":"~5.8.3"},"engines":{"node":">=18.0.0"},"typesVersions":{"<4.0":{"dist-types/*":["dist-types/ts3.4/*"]}},"files":["dist-*/**"],"author":{"name":"AWS SDK for JavaScript Team","url":"https://aws.amazon.com/javascript/"},"license":"Apache-2.0","browser":{"./dist-es/runtimeConfig":"./dist-es/runtimeConfig.browser"},"react-native":{"./dist-es/runtimeConfig":"./dist-es/runtimeConfig.native"},"homepage":"https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sso","repository":{"type":"git","url":"https://github.com/aws/aws-sdk-js-v3.git","directory":"clients/client-sso"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"@aws-sdk/nested-clients","version":"3.996.19","description":"Nested clients for AWS SDK packages.","main":"./dist-cjs/index.js","module":"./dist-es/index.js","types":"./dist-types/index.d.ts","scripts":{"build":"yarn lint && concurrently \'yarn:build:types\' \'yarn:build:es\' && yarn build:cjs","build:cjs":"node ../../scripts/compilation/inline nested-clients","build:es":"tsc -p tsconfig.es.json","build:include:deps":"yarn g:turbo run build -F=\\"$npm_package_name\\"","build:types":"tsc -p tsconfig.types.json","build:types:downlevel":"downlevel-dts dist-types dist-types/ts3.4","clean":"premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo","lint":"node ../../scripts/validation/submodules-linter.js --pkg nested-clients","test":"yarn g:vitest run","test:watch":"yarn g:vitest watch"},"engines":{"node":">=20.0.0"},"sideEffects":false,"author":{"name":"AWS SDK for JavaScript Team","url":"https://aws.amazon.com/javascript/"},"license":"Apache-2.0","dependencies":{"@aws-crypto/sha256-browser":"5.2.0","@aws-crypto/sha256-js":"5.2.0","@aws-sdk/core":"^3.973.27","@aws-sdk/middleware-host-header":"^3.972.9","@aws-sdk/middleware-logger":"^3.972.9","@aws-sdk/middleware-recursion-detection":"^3.972.10","@aws-sdk/middleware-user-agent":"^3.972.29","@aws-sdk/region-config-resolver":"^3.972.11","@aws-sdk/types":"^3.973.7","@aws-sdk/util-endpoints":"^3.996.6","@aws-sdk/util-user-agent-browser":"^3.972.9","@aws-sdk/util-user-agent-node":"^3.973.15","@smithy/config-resolver":"^4.4.14","@smithy/core":"^3.23.14","@smithy/fetch-http-handler":"^5.3.16","@smithy/hash-node":"^4.2.13","@smithy/invalid-dependency":"^4.2.13","@smithy/middleware-content-length":"^4.2.13","@smithy/middleware-endpoint":"^4.4.29","@smithy/middleware-retry":"^4.5.0","@smithy/middleware-serde":"^4.2.17","@smithy/middleware-stack":"^4.2.13","@smithy/node-config-provider":"^4.3.13","@smithy/node-http-handler":"^4.5.2","@smithy/protocol-http":"^5.3.13","@smithy/smithy-client":"^4.12.9","@smithy/types":"^4.14.0","@smithy/url-parser":"^4.2.13","@smithy/util-base64":"^4.3.2","@smithy/util-body-length-browser":"^4.2.2","@smithy/util-body-length-node":"^4.2.3","@smithy/util-defaults-mode-browser":"^4.3.45","@smithy/util-defaults-mode-node":"^4.2.49","@smithy/util-endpoints":"^3.3.4","@smithy/util-middleware":"^4.2.13","@smithy/util-retry":"^4.3.0","@smithy/util-utf8":"^4.2.2","tslib":"^2.6.2"},"devDependencies":{"concurrently":"7.0.0","downlevel-dts":"0.10.1","premove":"4.0.0","typescript":"~5.8.3"},"typesVersions":{"<4.5":{"dist-types/*":["dist-types/ts3.4/*"]}},"files":["./cognito-identity.d.ts","./cognito-identity.js","./signin.d.ts","./signin.js","./sso-oidc.d.ts","./sso-oidc.js","./sso.d.ts","./sso.js","./sts.d.ts","./sts.js","dist-*/**"],"browser":{"./dist-es/submodules/cognito-identity/runtimeConfig":"./dist-es/submodules/cognito-identity/runtimeConfig.browser","./dist-es/submodules/signin/runtimeConfig":"./dist-es/submodules/signin/runtimeConfig.browser","./dist-es/submodules/sso-oidc/runtimeConfig":"./dist-es/submodules/sso-oidc/runtimeConfig.browser","./dist-es/submodules/sso/runtimeConfig":"./dist-es/submodules/sso/runtimeConfig.browser","./dist-es/submodules/sts/runtimeConfig":"./dist-es/submodules/sts/runtimeConfig.browser"},"react-native":{},"homepage":"https://github.com/aws/aws-sdk-js-v3/tree/main/packages/nested-clients","repository":{"type":"git","url":"https://github.com/aws/aws-sdk-js-v3.git","directory":"packages/nested-clients"},"exports":{"./package.json":"./package.json","./sso-oidc":{"types":"./dist-types/submodules/sso-oidc/index.d.ts","module":"./dist-es/submodules/sso-oidc/index.js","node":"./dist-cjs/submodules/sso-oidc/index.js","import":"./dist-es/submodules/sso-oidc/index.js","require":"./dist-cjs/submodules/sso-oidc/index.js"},"./sts":{"types":"./dist-types/submodules/sts/index.d.ts","module":"./dist-es/submodules/sts/index.js","node":"./dist-cjs/submodules/sts/index.js","import":"./dist-es/submodules/sts/index.js","require":"./dist-cjs/submodules/sts/index.js"},"./signin":{"types":"./dist-types/submodules/signin/index.d.ts","module":"./dist-es/submodules/signin/index.js","node":"./dist-cjs/submodules/signin/index.js","import":"./dist-es/submodules/signin/index.js","require":"./dist-cjs/submodules/signin/index.js"},"./cognito-identity":{"types":"./dist-types/submodules/cognito-identity/index.d.ts","module":"./dist-es/submodules/cognito-identity/index.js","node":"./dist-cjs/submodules/cognito-identity/index.js","import":"./dist-es/submodules/cognito-identity/index.js","require":"./dist-cjs/submodules/cognito-identity/index.js"},"./sso":{"types":"./dist-types/submodules/sso/index.d.ts","module":"./dist-es/submodules/sso/index.js","node":"./dist-cjs/submodules/sso/index.js","import":"./dist-es/submodules/sso/index.js","require":"./dist-cjs/submodules/sso/index.js"}}}');
 
 /***/ })
 

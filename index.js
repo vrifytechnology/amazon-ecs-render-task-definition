@@ -40,13 +40,10 @@ async function run() {
     const containerName = core.getInput('container-name', { required: true });
     const imageURI = core.getInput('image', { required: true });
     const logGroup = core.getInput('log-group', { required: false });
-    const serviceFamily = core.getInput('service-family', { required: false });
     let envList = core.getInput('env-list', { required: false });
     if (envList) {
       envList = JSON.parse(envList)
     }
-    console.log(envList)
-
     const environmentVariables = core.getInput('environment-variables', { required: false });
     const envFiles = core.getInput('env-files', { required: false });
 
@@ -106,10 +103,6 @@ async function run() {
       throw new Error("Either task definition, task definition arn or task definition family must be provided");
     }
 
-    if (serviceFamily) {
-      taskDefContents.family = serviceFamily;
-    }
-
     const containersNames = containerName.split(',');
     // Check if containerNames length is major than 1
     // Regex to check if a string is comma separated
@@ -132,8 +125,6 @@ async function run() {
       containerDef.image = imageURI;
 
       if (logGroup) {
-        if (!containerDef.logConfiguration) { containerDef.logConfiguration = {}; }
-        if (!containerDef.logConfiguration.options) { containerDef.logConfiguration.options = {}; }
         containerDef.logConfiguration.options['awslogs-group'] = logGroup;
       }
 
