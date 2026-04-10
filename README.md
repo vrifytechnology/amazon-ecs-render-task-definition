@@ -13,6 +13,9 @@ Inserts a container image URI into an Amazon ECS task definition JSON file, crea
 <!-- tocstop -->
 
 ## Usage
+If task definition file is provided that has precedence over any other option to fetch task definition. 
+If both task definition file and task definition arn are provided, a warning that both have been provided will be returned and the task definition file will be used.
+If neither of task definition file, task definition arn, and task definition family are provided, an error will be thrown. (At least one option needs to be provided)
 
 To insert the image URI `amazon/amazon-ecs-sample:latest` as the image for the `web` container in the task definition file, and then deploy the edited task definition file to ECS:
 
@@ -22,12 +25,16 @@ To insert the image URI `amazon/amazon-ecs-sample:latest` as the image for the `
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: task-definition.json
+        task-definition-arn:  task-definition-arn
+        task-definition-family: task-definition-family-name 
+        task-definition-revision: task-definition-revision
         container-name: web
         image: amazon/amazon-ecs-sample:latest
         environment-variables: "LOG_LEVEL=info"
+        secrets: "SECRET_KEY=arn:aws:ssm:region:0123456789:parameter/secret"
 
     - name: Deploy to Amazon ECS service
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.render-web-container.outputs.task-definition }}
         service: my-service
@@ -50,6 +57,12 @@ input of the second:
         environment-variables: |
             LOG_LEVEL=info
             ENVIRONMENT=prod
+        docker-labels: |
+            SERVICE=service
+            VERSION=version
+        secrets: |
+            SECRET_KEY=arn:aws:ssm:region:0123456789:parameter/secret
+            SECOND_SECRET_KEY=arn:aws:secretsmanager:us-east-1:0123456789:secret:secretName
 
     - name: Modify Amazon ECS task definition with second container
       id: render-app-container
@@ -60,7 +73,7 @@ input of the second:
         image: amazon/amazon-ecs-sample-2:latest
 
     - name: Deploy to Amazon ECS service
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.render-app-container.outputs.task-definition }}
         service: my-service
